@@ -1,0 +1,12 @@
+<html>
+<body>
+<p>Please wait...</p>
+<script>
+  if(window.opener) {
+    console.log('open opener and reload');
+    window.opener.postMessage('reload');
+    window.close();
+  }
+</script>
+</body>
+</html>
