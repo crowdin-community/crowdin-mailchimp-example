@@ -11,18 +11,15 @@ const db = require('./db');
 const config = require('./config');
 const PORT = process.env.PORT || 8000;
 const middleware = require('./middleware.js')(db);
+const crowdinUpdate = require('./uploadToCrowdin');
+const typeformUpdate = require('./uploadToIntegration');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
-app.get('/', middleware.requireAuthentication, (req, res) => {
-  res
-    .cookie('host', `${req.protocol}://${req.headers.host}`)
-    .cookie('origin', req.query['origin'])
-    .sendFile(__dirname + '/templates/app.html');
-});
+app.get('/', middleware.requireAuthentication, (req, res) => res.sendFile(__dirname + '/templates/app.html'));
 
 app.get('/manifest.json', (req, res) => {
   console.log('get manifest');
@@ -30,48 +27,34 @@ app.get('/manifest.json', (req, res) => {
   res.json(sanitizedConfig);
 });
 
-app.get('/status', middleware.requireAuthentication, (req, res) => {
+const catchRejection = (message, res) => e => {
+  console.log(message);
+  console.log(e);
+  res.status(500).send(message);
+}
 
-  // return res.json({isInstalled: false, isLoggedIn: false});
+app.get('/status', middleware.requireAuthentication, (req, res) => {
 
   let status = {isInstalled: false, isLoggedIn: false};
 
   db.organization.findOne({where: {uid: res.origin.domain}})
     .then(organization => {
-      return new Promise(resolve => {
-        resolve({isInstalled: !!organization})
-      })
-    })
-    .then(isInstalled => {
-      status.isInstalled = isInstalled;
-      return db.integration.findOne({where: {uid: `${res.origin.domain}__${res.origin.context.project_id}`}})
+      status.isInstalled = !!organization;
+      return db.integration.findOne({where: {uid: res.clientId}})
     })
     .then(integration => {
-      return new Promise(resolve => {
-        resolve({isLoggedIn: !!integration});
-      })
-    })
-    .then(isLoggedIn => {
-      status.isLoggedIn = isLoggedIn;
+      status.isLoggedIn = !!integration
       return res.json(status);
     })
-    .catch(e => {
-      console.log(e);
-      res.status(500).send();
-    })
-  }, function(e) {
-    console.log(e);
-    res.status(500).send();
-});
-
+    .catch(catchRejection('Some problem to fetch organization or integration', res))
+  });
 
 app.get('/integration-login', middleware.requireAuthentication, (req, res) => {
   let clientId = null;
   try {
-    clientId = jwt.sign({clientId: `${res.origin.domain}__${res.origin.context.project_id}`}, config.clientSecret);
-    console.log(clientId);
+    clientId = jwt.sign({clientId: res.clientId}, config.clientSecret);
   } catch(e) {
-    res.status(500).send();
+    catchRejection('Cant sign JWT token', res)(e);
   }
   const url = `https://api.typeform.com/oauth/authorize?client_id=${config.typeformClientId}&redirect_uri=${config.callbackUrl}&scope=${config.scope}&state=${clientId}`;
   res.send({url});
@@ -80,10 +63,9 @@ app.get('/integration-login', middleware.requireAuthentication, (req, res) => {
 app.get('/integration-token', (req, res) => {
   var clientId = null;
   try {
-    var decodedJwt = jwt.verify(req.query.state, config.clientSecret);
-    clientId = decodedJwt.clientId;
+    clientId = (jwt.verify(req.query.state, config.clientSecret) || {}).clientId;
   } catch(e) {
-    return res.status(500).send();
+    catchRejection('Cant decode JWT', res)(e);
   }
   const payload = {
     grant_type: 'authorization_code',
@@ -92,71 +74,66 @@ app.get('/integration-token', (req, res) => {
     client_secret: config.typeformSecret,
     redirect_uri: config.callbackUrl,
   };
+  let tokenRes = {};
   return axios.post(`https://api.typeform.com/oauth/token`, qs.stringify(payload))
     .then((response) => {
-      return db.integration.findOne({where: {uid: clientId}}).then((integration) => {
-        let params = {
-          integrationTokenExpiresIn: +(new Date().getTime()) + +response.data.expires_in,
-          integrationToken: response.data.access_token,
-          integrationTokenType: response.data.token_type,
-          integrationRefreshToken: response.data.refresh_token || '',
-        };
-        if(integration) {
-          return integration.update(params);
-        } else {
-          params.uid = clientId;
-          return db.integration.create(params);
-        }
-      })
-      // req.session = {};
-      // req.session.user = response.data;
+      tokenRes = response;
+      return db.integration.findOne({where: {uid: clientId}})
     })
     .then((integration) => {
-      console.log(integration);
-      // return db.integration.findAll().then((records) => console.log(records));
-      return new Promise(res => res());
+      let params = {
+        integrationTokenExpiresIn: (new Date().getTime()/1000) + +tokenRes.data.expires_in,
+        integrationToken: tokenRes.data.access_token,
+        integrationTokenType: tokenRes.data.token_type,
+        integrationRefreshToken: tokenRes.data.refresh_token || '',
+      };
+      if(integration) {
+        return integration.update(params);
+      } else {
+        params.uid = clientId;
+        return db.integration.create(params);
+      }
     })
     .then(() => {
       res.sendFile(__dirname + '/templates/closeAuthModal.html');
     })
-    .catch(e => {
-      console.log(e);
-      res.status(500).send();
-    })
+    .catch(catchRejection('Cant create or update integrations', res))
 });
 
-app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegrationToken, (req, res) => {
-  const typeformAPI = createIntegrationClient({token: res.integration.token});
+app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegration, (req, res) => {
+  const typeformAPI = createIntegrationClient({token: res.integration.integrationToken});
   typeformAPI.forms.list()
   .then((response) => {
     res.send(response.items);
-  }).catch( e => {
-    res.status(400).send();
-  });
+  })
+  .catch(catchRejection('Cant fetch integration data', res));
 });
 
 app.get('/organizations', (req, res) => {
   db.organization.findAll()
   .then(organizations => {
     res.json(organizations);
-  }).catch( e => {
-    console.log(e);
-    res.status(500).send();
-  });
+  })
+  .catch(catchRejection('Cnat fetch organizations', res));
 });
 
 app.get('/integrations', (req, res) => {
   db.integration.findAll()
     .then(integrations => {
       res.json(integrations);
-    }).catch( e => {
-    console.log(e);
-    res.status(500).send();
-  });
+    })
+    .catch(catchRejection('Cant fetch integrations', res));
+});
+
+app.get('/integration-log-out', middleware.requireAuthentication, middleware.withIntegration, (req, res) => {
+  res.integration.destroy()
+  .then(() => {
+    res.status(204).send();
+  })
+  .catch(catchRejection('Cant destroy integration', res));
 });
 
 app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdinToken, (req, res) => {
-  console.log('--------->', res.crowdin, res.origin);
   const crowdinApi = new crowdin({
     token: res.crowdin.token,
     organization: res.origin.domain,
@@ -165,72 +142,58 @@ app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdi
   const projectId = res.origin.context.project_id;
     crowdinApi.sourceFilesApi.listProjectDirectories(projectId, undefined, undefined, 500)
       .then( response => {
-        files.push(response);
-        return new Promise ( res => res());
-      })
-      .then(() => {
+        files.push(...response.data.map(({data}) => ({...data, node_type: '0'})));
         return crowdinApi.sourceFilesApi.listProjectFiles(projectId, undefined, undefined, 500);
       })
       .then( response => {
-        files.push(response);
+        files.push(...response.data.map(({data}) => data));
+        return crowdinApi.sourceFilesApi.listProjectBranches(projectId, undefined, 500);
+      })
+      .then( response => {
+        files.push(...response.data.map(({data}) => ({...data, node_type: '2'})));
         res.json(files);
       })
-      .catch( e => {
-        console.log(e);
-        res.status(500).send();
-      });
-
-
-
-
-
-  // const result = files.data
-  // //only at root level
-  //   .filter(f => !f.data.directoryId || f.data.directoryId === 0)
-  //   //only json files
-  //   .filter(f => f.data.name.endsWith('.json'))
-  //   .map(f => f.data);
-  // res.send(result);
-  //
-  // res.status(204).send();
+      .catch(catchRejection('Cant fetch data from Crowdin', res));
 });
 
 app.post('/installed', (req, res) => {
+  let client = null;
   db.organization.findOne({where: {uid: req.body.domain}})
     .then(organization => {
-      console.log('-------------->', organization); 
-      if(organization) {
-        return res.status(204).send();
-      } else {
-        let payload = {
-          grant_type: 'authorization_code',
-          client_id: config.authentication.clientId,
-          client_secret: config.clientSecret,
-          code: req.body.code,
-        };
-        // todo: do not forget change this line before production!!!
-        return axios.post('http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
-      }
+      client = organization;
+      let payload = {
+        grant_type: 'authorization_code',
+        client_id: config.authentication.clientId,
+        client_secret: config.clientSecret,
+        code: req.body.code,
+      };
+      // todo: do not forget change this line before production!!!
+      return axios.post('http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
     })
     .then(resp => {
-      return db.organization.create({
+      const params = {
         uid: req.body.domain,
         accessToken: resp.data.access_token,
         refreshToken: resp.data.refresh_token,
         expire: new Date().getTime() + +resp.data.expires_in
-      })
+      }
+      if(!!client){
+        return client.update(params);
+      } else {
+        return db.organization.create(params);
+      }
     })
     .then(organization => {
       res.status(204).send();
     })
-    .catch(e => {
-      // console.log(e);
-      res.status(500).send();
-    });
+    .catch(catchRejection('Cant install application', res));
 });
 
+app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdinToken, crowdinUpdate()); 
+
+app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdinToken, typeformUpdate());
+
 db.sequelize.sync({force: false}).then(function() {
-  console.log('Everything is synced!');
   app.listen(PORT, () => {
     console.log(`Crowdin apps listening on ${PORT}! Good luck!!!`);
   });

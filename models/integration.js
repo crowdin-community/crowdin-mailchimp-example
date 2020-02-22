@@ -25,6 +25,9 @@ module.exports = function(sequelize, DataTypes){
         }
     });
 
+   
+
+
     // User.prototype.generateToken = function (type) {
     //     if(typeof type !== 'string'){
     //         return undefined;

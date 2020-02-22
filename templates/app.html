@@ -93,6 +93,7 @@
                 el.innerHTML = '';
                 el.appendChild(template.content.cloneNode(true));
                 el.querySelector('crowdin-button').innerText = `Change ${manifest.name} account`;
+                el.querySelector('crowdin-button').onclick = integrationLogOut;
                 prepareComponent();
               }
             }).catch(e => {
@@ -172,14 +173,77 @@
                     return response.json();
                 })
                 .then((res) => {
-                  console.log(res);
                   let el = document.querySelector('crowdin-simple-integration');
-                  el.setCrowdinFilesData(res.data.map(({data: {directoryId, branchId, ...rest}}) => ({...rest, parent_id: directoryId || branchId || 0})));
+                  console.log(res);
+                  el.setCrowdinFilesData(res.map(({directoryId, branchId, ...rest}) => ({...rest, parent_id: directoryId || branchId || 0})));
                   el.setAttribute('is-crowdin-loading', false);
+                //   setTimeout(() => {
+                //     el.setAttribute('is-crowdin-loading', true);
+                //     let files = res.filter(f => +f.node_type === 0);
+                //     console.log(files);
+                //     el.setCrowdinFilesData(files.map(({directoryId, branchId, ...rest}) => ({...rest, parent_id: directoryId || branchId || 0})));
+                //     el.setAttribute('is-crowdin-loading', false);
+                //   }, 2000);
                 }).catch(e => {
                     catchRejection(e);
                 });
         }
+
+        function integrationLogOut () {
+            fetch('/integration-log-out' + restParams)
+                .then( res => {
+                    let el = document.querySelector('.i_w');
+                    el.innerHTML =
+                        `<div class='center'><div><crowdin-button primary onclick="integrationLogin()">Loggin with ${manifest.name}</crowdin-button></div></div>`;
+                    integrationLogin();  // immidiatly show login form again
+                })
+                .catch( e => {
+                    catchRejection(e);
+                })
+        }
+
+        function uploadFilesToCrowdin(e) {
+            console.log(e.detail);
+            const fileIds = event.detail.map(file => file.id);
+            let el = document.querySelector('crowdin-simple-integration');
+            el.setAttribute('is-to-crowdin-process', true);
+            fetch('/upload-to-crowdin' + restParams, {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(fileIds)
+            })
+            .then( res => {
+                console.log('update res', res);
+                el.setAttribute('is-to-crowdin-process', false);
+                getCrowdinFiles();
+            })
+            .catch( e => {
+                catchRejection(e);
+            });
+        }
+
+        function uploadFilesToIntegration(e) {
+            console.log(e.detail);
+            const fileIds = event.detail.map(file => file.name.replace('.json', ''));
+            let el = document.querySelector('crowdin-simple-integration');
+            el.setAttribute('is-to-integration-process', true);
+            fetch('/upload-to-integration' + restParams, {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(fileIds)
+            })
+            .then( res => {
+                console.log('update res', res);
+                el.setAttribute('is-to-integration-process', false);
+                getIntegrationFiles();
+            })
+            .catch( e => {
+                catchRejection(e);
+            });
+        }
+
+        document.body.addEventListener('uploadFilesToCrowdin', uploadFilesToCrowdin);
+        document.body.addEventListener('uploadFilesToIntegration', uploadFilesToIntegration);
     </script>
 </body>
 </html>
