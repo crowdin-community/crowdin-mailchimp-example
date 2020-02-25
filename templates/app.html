@@ -74,7 +74,7 @@
                 });
         })();
 
-        (function isInstalled (){
+        function isInstalled (){
           fetch('/status' + restParams)
             .then((response) => {
               return response.json();
@@ -99,7 +99,9 @@
             }).catch(e => {
             catchRejection(e);
           });
-        })()
+        };
+
+        installed();
 
         function integrationLogin () {
             fetch('/integration-login' + restParams)
@@ -177,13 +179,6 @@
                   console.log(res);
                   el.setCrowdinFilesData(res.map(({directoryId, branchId, ...rest}) => ({...rest, parent_id: directoryId || branchId || 0})));
                   el.setAttribute('is-crowdin-loading', false);
-                //   setTimeout(() => {
-                //     el.setAttribute('is-crowdin-loading', true);
-                //     let files = res.filter(f => +f.node_type === 0);
-                //     console.log(files);
-                //     el.setCrowdinFilesData(files.map(({directoryId, branchId, ...rest}) => ({...rest, parent_id: directoryId || branchId || 0})));
-                //     el.setAttribute('is-crowdin-loading', false);
-                //   }, 2000);
                 }).catch(e => {
                     catchRejection(e);
                 });
