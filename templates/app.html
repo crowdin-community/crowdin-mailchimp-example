@@ -26,7 +26,6 @@
 <body>
     <template id=integration>
         <div class='top'>
-            <crowdin-button outlined onclick="logout()">Change integration Account</crowdin-button>
         </div>
         <crowdin-simple-integration>
         </crowdin-simple-integration>
@@ -92,8 +91,6 @@
                 let template = document.getElementById('integration');
                 el.innerHTML = '';
                 el.appendChild(template.content.cloneNode(true));
-                el.querySelector('crowdin-button').innerText = `Change ${manifest.name} account`;
-                el.querySelector('crowdin-button').onclick = integrationLogOut;
                 prepareComponent();
               }
             }).catch(e => {
@@ -146,6 +143,7 @@
 
         function prepareComponent () {
             let el = document.querySelector('crowdin-simple-integration');
+            document.querySelector('.top').innerHTML = `<crowdin-button outlined onclick="integrationLogOut()">Change ${manifest.name} account</crowdin-button>`;
             el.setAttribute('integration-name', manifest.name);
             el.setAttribute('integration-logo', 'https://images.ctfassets.net/bx16dovk9m7p/4xeG846otOi8Sc0uWOY6Qm/fbf539fdca119ce5f58913aa40accb6f/favicon-196x196.png');
             el.setAttribute('is-crowdin-loading', true);

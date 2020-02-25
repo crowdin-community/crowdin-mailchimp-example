@@ -17,6 +17,7 @@ const typeformUpdate = require('./uploadToIntegration');
 const app = express();
 
 app.use(bodyParser.json());
+app.use(express.static('assets'))
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.get('/', middleware.requireAuthentication, (req, res) => res.sendFile(__dirname + '/templates/app.html'));
@@ -176,7 +177,7 @@ app.post('/installed', (req, res) => {
         uid: req.body.domain,
         accessToken: resp.data.access_token,
         refreshToken: resp.data.refresh_token,
-        expire: new Date().getTime() + +resp.data.expires_in
+        expire: new Date().getTime()/1000 + +resp.data.expires_in
       }
       if(!!client){
         return client.update(params);

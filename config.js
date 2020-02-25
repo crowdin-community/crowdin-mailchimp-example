@@ -20,7 +20,7 @@ const manifest = {
               "key": "typeform_app_test",
               "name": "Typeform Integration",
               "description": "Data sync between Typeform and Crowdin",
-              "logo": "/logo.png",
+              "logo": "/assets/logo.png",
               "url": "/"
           }
       ]
