@@ -55,117 +55,193 @@ function crowdinUpdate() {
     };
 }
 
-/* function crowdinUpdate() {
-    return (req, res) => {
-        return new Promise ((resolve, reject) => {
-            const typeformAPI = createClient({ token: res.integration.integrationToken });
-            const crowdinApi = new crowdin({
-                token: res.crowdin.token,
-                organization: res.origin.domain
-            });
-            const fileIds = req.body;
-            const projectId = res.origin.context.project_id;
-            let mappedFiles = [];
-            let integrationFiles = [];
 
-            crowdinApi.sourceFilesApi.listProjectFiles(projectId, undefined, undefined, 500)
-            .then( files => {
-                mappedFiles = files.data.map(f => f.data);
-                return typeformAPI.forms.list(); 
-            })
-            .then( response => {
-                integrationFiles = response.items;
-            
-                Promise.all(fileIds.map(fid => typeformAPI.forms.get({ uid: fid })))
-                .then((values) => {
-                    return Promise.all(
-                        values.map( f =>  crowdinApi.uploadStorageApi.addStorage(`${f.title}.json`, JSON.stringify(getTranslatableStrings(f))))
-                    )
-                })
-                .then(storageIds => {
-                    console.log(storageIds, integrationFiles);
-                    addedFiles = storageIds.map((f, i) => 
-                        ({...f.data, integrationFileId: integrationFiles[i].id, integrationUpdatedAt: integrationFiles[i].last_updated_at})
-                    ); 
-                    let uploadedFiles = [];
-                    try {
-                        uploadedFiles = JSON.parse(res.integration.mappedFiles);
-                    } catch (e) {
-                        uploadedFiles = [];
-                    }
+// function crowdinUpdate() {
+//   return (req, res) => {
+//     return new Promise((resolve, reject) => {
+//       const typeformAPI = createClient({token: res.integration.integrationToken});
+//       const crowdinApi = new crowdin({
+//         token: res.crowdin.token,
+//         organization: res.origin.domain
+//       });
+//       const fileIds = req.body;
+//       const projectId = res.origin.context.project_id;
+//       let uploadedFiles = [];
+//       let integrationFiles = [];
+//
+//       try {
+//         uploadedFiles = JSON.parse(res.integration.mappedFiles);
+//       } catch(e) {
+//         console.log('Cant parse mapped files');
+//       }
+//
+//       Promise.all(fileIds.map(fid => typeformAPI.forms.get({uid: fid})))
+//         .then((values) => {
+//           integrationFiles = values;
+//           return Promise.all(
+//             values.map(f => crowdinApi.uploadStorageApi.addStorage(`${f.title}.json`, JSON.stringify(getTranslatableStrings(f))))
+//           )
+//         })
+//         .then(storageIds => {
+//           console.log('storage ids', storageIds);
+//           addedFiles = storageIds.map((f, i) =>
+//             ({
+//               ...f.data,
+//               integrationFileId: integrationFiles[i].id,
+//               integrationUpdatedAt: integrationFiles[i].last_updated_at
+//             })
+//           );
+//
+//           return Promise.all(addedFiles.map(f => {
+//             file = uploadedFiles.find(u => u.integrationFileId === f.integrationFileId);
+//             if(!!file) {
+//               console.log('try update');
+//               return crowdinApi.sourceFilesApi.updateOrRestoreFile(projectId, file.id, {storageId: f.id})
+//             } else {
+//               console.log('try create new file');
+//               return crowdinApi.sourceFilesApi.createFile(projectId, {
+//                 storageId: f.id,
+//                 name: f.fileName,
+//                 title: f.integrationFileId
+//               })
+//             }
+//           }))
+//         })
+//         .then( responses => {
+//           let arr = JSON.stringify(_.unionBy(addedFiles.map(f => ({
+//             ...f,
+//             crowdinUpdatedAt: new Date()
+//           })), uploadedFiles, 'integrationFileId'));
+//           console.log('res arr -------------------------------------------->', arr);
+//           arr = [];
+//           res.integration.update({mapingFiles: arr});
+//
+//           console.log('db updated', response);
+//           res.status(400).json(responses);
+//           // wrire with crowdin fileId to db.\
+//           // res 200 send
+//           resolve();
+//         })
+//         .catch( e => {
+//           return res.status(500).send(e);
+//           reject();
+//         });
+//
+//
+//
+//
+//           // let mappedFiles = [];
+//           // let integrationFiles = [];
+//           //
+//           // crowdinApi.sourceFilesApi.listProjectFiles(projectId, undefined, undefined, 500)
+//           //   .then(files => {
+//           //     mappedFiles = files.data.map(f => f.data);
+//           //     return typeformAPI.forms.list();
+//           //   })
+//           //   .then(response => {
+//           //     integrationFiles = response.items;
+//           //
+//           //     Promise.all(fileIds.map(fid => typeformAPI.forms.get({uid: fid})))
+//           //       .then((values) => {
+//           //         return Promise.all(
+//           //           values.map(f => crowdinApi.uploadStorageApi.addStorage(`${f.title}.json`, JSON.stringify(getTranslatableStrings(f))))
+//           //         )
+//           //       })
+//           //       .then(storageIds => {
+//           //         console.log(storageIds, integrationFiles);
+//           //         addedFiles = storageIds.map((f, i) =>
+//           //           ({
+//           //             ...f.data,
+//           //             integrationFileId: integrationFiles[i].id,
+//           //             integrationUpdatedAt: integrationFiles[i].last_updated_at
+//           //           })
+//           //         );
+//           //         let uploadedFiles = [];
+//           //         try {
+//           //           uploadedFiles = JSON.parse(res.integration.mappedFiles);
+//           //         } catch(e) {
+//           //           uploadedFiles = [];
+//           //         }
+//           //
+//           //         console.log(mappedFiles);
+//           //         Promise.all(addedFiles.map(f => {
+//           //           file = mappedFiles.find(u => u.title === f.integrationFileId)
+//           //           if(!!file) {
+//           //             console.log('try update');
+//           //             return crowdinApi.sourceFilesApi.updateOrRestoreFile(projectId, file.id, {storageId: f.id})
+//           //           } else {
+//           //             return crowdinApi.sourceFilesApi.createFile(projectId, {
+//           //               storageId: f.id,
+//           //               name: `${f.integrationFileId}.json`,
+//           //               title: f.fileName
+//           //             })
+//           //           }
+//           //         }))
+//           //           .then(responses => {
+//           //             let arr = JSON.stringify(_.unionBy(addedFiles.map(f => ({
+//           //               ...f,
+//           //               crowdinUpdatedAt: new Date().getTime()
+//           //             })), uploadedFiles, 'integrationFileId'));
+//           //             res.integration.update({mapingFiles: arr});
+//           //
+//           //             console.log('db updated', response);
+//           //             res.status(400).json(responses);
+//           //             // wrire with crowdin fileId to db.\
+//           //             // res 200 send
+//           //             resolve();
+//           //           })
+//           //           .catch(e => {
+//           //             console.log(e);
+//           //             // drop this when api fixes
+//           //             let arr = JSON.stringify(_.unionBy(addedFiles.map(f => ({
+//           //               ...f,
+//           //               crowdinUpdatedAt: new Date().getTime()
+//           //             })), uploadedFiles, 'integrationFileId'));
+//           //             res.integration.update({mapingFiles: arr});
+//           //             console.log('db updated');
+//           //             res.status(500).json(e);
+//           //             reject();
+//           //           });
+//           //       });
+//           //   })
+//           //   .catch(e => {
+//           //     console.log('some goesf wron g', e);
+//           //     reject();
+//           //   });
+//         });
+//     }
+//   };
 
-                    console.log(mappedFiles);  
-                    Promise.all(addedFiles.map(f => {
-                        file = mappedFiles.find(u => u.title === f.integrationFileId)
-                        if(!!file){
-                            console.log('try update');
-                            return crowdinApi.sourceFilesApi.updateOrRestoreFile(projectId, file.id, { storageId: f.id })
-                        } else {
-                            return crowdinApi.sourceFilesApi.createFile(projectId, {
-                                storageId: f.id,
-                                name: `${f.integrationFileId}.json`,
-                                title: f.fileName
-                            })
-                        }
-                    }))
-                    .then(responses => {
-                        let arr = JSON.stringify(_.unionBy(addedFiles.map(f => ({...f, crowdinUpdatedAt: new Date().getTime()})), uploadedFiles, 'integrationFileId'));
-                        res.integration.update({mapingFiles: arr});
-                        console.log('db updated', response);
-                        res.status(400).json(responses);
-                        // wrire with crowdin fileId to db.\
-                        // res 200 send
-                        resolve();
-                    })
-                    .catch( e => {
-                        console.log(e); 
-                        // drop this when api fixes
-                        let arr = JSON.stringify(_.unionBy(addedFiles.map(f => ({...f, crowdinUpdatedAt: new Date().getTime()})), uploadedFiles, 'integrationFileId'));
-                        res.integration.update({mapingFiles: arr});
-                        console.log('db updated');
-                        res.status(500).json(e);
-                        reject();
-                    });
-                });
-            })
-            .catch( e => {
-                console.log('some goesf wron g', e);  
-                reject();
-            }); 
-        });
-    } 
-};
- */
-function getTranslatableStrings(form) {
+  function getTranslatableStrings(form) {
     let result = {};
-    if (form.fields) {
-        form.fields
-            .filter(field => field.ref && field.title)
-            .forEach(field => {
-                result[field.ref + '_field'] = field.title;
-            });
+    if(form.fields) {
+      form.fields
+        .filter(field => field.ref && field.title)
+        .forEach(field => {
+          result[field.ref + '_field'] = field.title;
+        });
     }
-    if (form.welcome_screens) {
-        form.welcome_screens
-            .filter(wScreen => wScreen.ref && wScreen.title)
-            .forEach(wScreen => {
-                result[wScreen.ref + '_welcome_screen'] = wScreen.title;
-                if (wScreen.properties && wScreen.properties.button_text) {
-                    result[wScreen.ref + '_button_welcome_screen'] = wScreen.properties.button_text;
-                }
-            });
+    if(form.welcome_screens) {
+      form.welcome_screens
+        .filter(wScreen => wScreen.ref && wScreen.title)
+        .forEach(wScreen => {
+          result[wScreen.ref + '_welcome_screen'] = wScreen.title;
+          if(wScreen.properties && wScreen.properties.button_text) {
+            result[wScreen.ref + '_button_welcome_screen'] = wScreen.properties.button_text;
+          }
+        });
     }
-    if (form.thankyou_screens) {
-        form.thankyou_screens 
-            .filter(tScreen => tScreen.ref && tScreen.title)
-            .forEach(tScreen => {
-                result[tScreen.ref + '_thankyou_screens'] = tScreen.title;
-                if (tScreen.properties && tScreen.properties.button_text) {
-                    result[tScreen.ref + '_button_thankyou_screens'] = tScreen.properties.button_text;
-                }
-            });
+    if(form.thankyou_screens) {
+      form.thankyou_screens
+        .filter(tScreen => tScreen.ref && tScreen.title)
+        .forEach(tScreen => {
+          result[tScreen.ref + '_thankyou_screens'] = tScreen.title;
+          if(tScreen.properties && tScreen.properties.button_text) {
+            result[tScreen.ref + '_button_thankyou_screens'] = tScreen.properties.button_text;
+          }
+        });
     }
     return result;
-}
+  }
 
-module.exports = crowdinUpdate;
+  module.exports = crowdinUpdate;

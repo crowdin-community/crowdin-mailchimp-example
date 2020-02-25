@@ -17,7 +17,7 @@ const typeformUpdate = require('./uploadToIntegration');
 const app = express();
 
 app.use(bodyParser.json());
-app.use(express.static('assets'))
+app.use(express.static('assets'));
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.get('/', middleware.requireAuthentication, (req, res) => res.sendFile(__dirname + '/templates/app.html'));
@@ -32,7 +32,7 @@ const catchRejection = (message, res) => e => {
   console.log(message);
   console.log(e);
   res.status(500).send(message);
-}
+};
 
 app.get('/status', middleware.requireAuthentication, (req, res) => {
 
@@ -57,7 +57,7 @@ app.get('/integration-login', middleware.requireAuthentication, (req, res) => {
   } catch(e) {
     catchRejection('Cant sign JWT token', res)(e);
   }
-  const url = `https://api.typeform.com/oauth/authorize?client_id=${config.typeformClientId}&redirect_uri=${config.callbackUrl}&scope=${config.scope}&state=${clientId}`;
+  const url = `https://api.typeform.com/oauth/authorize?client_id=${config.integrationClientId}&redirect_uri=${config.callbackUrl}&scope=${config.scope}&state=${clientId}`;
   res.send({url});
 });
 
@@ -71,8 +71,8 @@ app.get('/integration-token', (req, res) => {
   const payload = {
     grant_type: 'authorization_code',
     code: req.query.code,
-    client_id: config.typeformClientId,
-    client_secret: config.typeformSecret,
+    client_id: config.integrationClientId,
+    client_secret: config.integrationSecret,
     redirect_uri: config.callbackUrl,
   };
   let tokenRes = {};
@@ -169,8 +169,7 @@ app.post('/installed', (req, res) => {
         code: req.body.code,
       };
       // todo: do not forget change this line before production!!!
-      return axios.post('https://accounts.crowdin.com/oauth/token', payload)
-      //return axios.post('http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
+      return axios.post(process.env.NODE_ENV === 'production' ? 'https://accounts.crowdin.com/oauth/token' : 'http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
     })
     .then(resp => {
       const params = {
