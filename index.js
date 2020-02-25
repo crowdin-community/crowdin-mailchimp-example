@@ -193,7 +193,7 @@ app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.with
 
 app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdinToken, typeformUpdate());
 
-db.sequelize.sync({force: true}).then(function() {
+db.sequelize.sync({force: false}).then(function() {
   app.listen(PORT, () => {
     console.log(`Crowdin apps listening on ${PORT}! Good luck!!!`);
   });
