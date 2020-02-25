@@ -56,7 +56,8 @@ module.exports = function(db) {
               client_secret: config.clientSecret,
               refresh_token: organization.refreshToken,
             };
-            axios.post('http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
+            axios.post('https://accounts.crowdin.com/oauth/token', payload)
+            //axios.post('http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
               .then(response => {
                 let params = {
                   refreshToken: response.data.refresh_token,

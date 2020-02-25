@@ -168,7 +168,8 @@ app.post('/installed', (req, res) => {
         code: req.body.code,
       };
       // todo: do not forget change this line before production!!!
-      return axios.post('http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
+      return axios.post('https://accounts.crowdin.com/oauth/token', payload)
+      //return axios.post('http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
     })
     .then(resp => {
       const params = {
