@@ -17,8 +17,9 @@ const typeformUpdate = require('./uploadToIntegration');
 const app = express();
 
 app.use(bodyParser.json());
-app.use(express.static('assets'));
 app.use(bodyParser.urlencoded({extended: false}));
+
+app.get('/assets/logo.png', (req, res) => res.sendFile(__dirname + '/assets/logo.png'));
 
 app.get('/', middleware.requireAuthentication, (req, res) => res.sendFile(__dirname + '/templates/app.html'));
 
