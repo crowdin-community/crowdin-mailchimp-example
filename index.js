@@ -111,21 +111,21 @@ app.get('/integration-data', middleware.requireAuthentication, middleware.withIn
   .catch(catchRejection('Cant fetch integration data', res));
 });
 
-app.get('/organizations', (req, res) => {
-  db.organization.findAll()
-  .then(organizations => {
-    res.json(organizations);
-  })
-  .catch(catchRejection('Cnat fetch organizations', res));
-});
-
-app.get('/integrations', (req, res) => {
-  db.integration.findAll()
-    .then(integrations => {
-      res.json(integrations);
-    })
-    .catch(catchRejection('Cant fetch integrations', res));
-});
+// app.get('/organizations', (req, res) => {
+//   db.organization.findAll()
+//   .then(organizations => {
+//     res.json(organizations);
+//   })
+//   .catch(catchRejection('Cnat fetch organizations', res));
+// });
+//
+// app.get('/integrations', (req, res) => {
+//   db.integration.findAll()
+//     .then(integrations => {
+//       res.json(integrations);
+//     })
+//     .catch(catchRejection('Cant fetch integrations', res));
+// });
 
 app.get('/integration-log-out', middleware.requireAuthentication, middleware.withIntegration, (req, res) => {
   res.integration.destroy()
