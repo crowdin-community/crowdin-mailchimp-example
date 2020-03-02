@@ -24,7 +24,6 @@ app.get('/assets/logo.png', (req, res) => res.sendFile(__dirname + '/assets/logo
 app.get('/', middleware.requireAuthentication, (req, res) => res.sendFile(__dirname + '/templates/app.html'));
 
 app.get('/manifest.json', (req, res) => {
-  console.log('get manifest');
   var sanitizedConfig = _.pick(config, 'identifier', 'name', 'baseUrl', 'authentication', 'events', 'scopes', 'modules');
   res.json(sanitizedConfig);
 });

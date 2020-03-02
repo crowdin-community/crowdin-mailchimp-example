@@ -7,9 +7,12 @@
     <title></title>
     <script src="https://pure-refuge-59195.herokuapp.com/dist/crowdin-web-components/crowdin-web-components.js"></script>
     <style type='text/css'>
-        .i_w{
-            padding: 16px 24px; max-width: 1420px; margin: 0 auto;
+        .i_w {
+            padding: 16px 24px;
+            max-width: 1420px;
+            margin: 0 auto;
         }
+
         .center {
             text-align: center;
             min-height: calc(100vh - 64px);
@@ -17,6 +20,7 @@
             align-items: center;
             justify-content: space-around;
         }
+
         .top {
             text-align: right;
             margin-bottom: 10px;
@@ -24,219 +28,276 @@
     </style>
 </head>
 <body>
-    <template id=integration>
-        <div class='top'>
-        </div>
-        <crowdin-simple-integration>
-        </crowdin-simple-integration>
-    </template>
-    <div class='i_w'>
-        <div class="center">
-            <div>
-                <h1></h1>
-                <crowdin-progress-indicator></crowdin-progress-indicator>
-            </div>
+<template id=integration>
+    <div class='top'>
+    </div>
+    <crowdin-simple-integration>
+    </crowdin-simple-integration>
+</template>
+<div class='i_w'>
+    <div class="center">
+        <div>
+            <h1></h1>
+            <crowdin-progress-indicator></crowdin-progress-indicator>
         </div>
     </div>
-    <script type=text/javascript>
-        var manifest = {};
-        const urlParams = new URLSearchParams(window.location.search);
-        const origin = urlParams.get('origin');
-        const client_id = urlParams.get('client_id');
-        const tokenJwt = urlParams.get('tokenJwt');
-        const restParams = window.location.search;
+</div>
+<crowdin-toasts></crowdin-toasts>
+<script type=text/javascript>
+  let manifest = {};
+  const urlParams = new URLSearchParams(window.location.search);
+  const origin = urlParams.get('origin');
+  const client_id = urlParams.get('client_id');
+  const tokenJwt = urlParams.get('tokenJwt');
+  const restParams = window.location.search;
 
-        function catchRejection (e) {
-            console.log(e);
-            document.querySelector('.i_w .center').innerHTML = 
-            `<crowdin-nothing-to-display 
+  function showToast (message) {
+    if(!!message) {
+      toasts = document.querySelector('crowdin-toasts');
+      if(toasts && toasts.pushToasts) {
+        toasts.pushToasts([message]);
+      } else {
+        setTimeout(() => {
+          toasts.pushToasts([message]);
+        }, 1000);
+      }
+    }
+  }
+
+  function catchRejection(e, message = undefined) {
+    console.log(e);
+    document.querySelector('.i_w .center').innerHTML =
+      `<crowdin-nothing-to-display
                 message="${manifest.name}" 
                 sub-message="It's not a problem with crowdin, it's something on app backend"
             ></crowdin-nothing-to-display>`;
-        }
+    showToast(message);
+  }
 
-        if(!origin || !client_id || !tokenJwt){
-            catchRejection();
-        }
-
-        (function getManifest (){
-            fetch('/manifest.json')
-                .then((response) => {
-                    return response.json();
-                })
-                .then((res) => {
-                    manifest = res;
-                    document.title = res.name;
-                    document.querySelector('.i_w h1').innerText = manifest.name;
-                }).catch(e => {
-                    catchRejection(e);
-                });
-        })();
-
-        function isInstalled (){
-          fetch('/status' + restParams)
-            .then((response) => {
-              return response.json();
-            })
-            .then((res) => {
-              if(!res.isInstalled){
-                document.querySelector('.i_w .center div').innerHTML =
-                  `<h1>Looks like ${manifest.name} is not installed yet!</h1>
-                        <p>Contact your organization administrator to install it. More info on <a href='https://support.crowdin.com'>Link to how to install</a></p>`;
-              } else if(!res.isLoggedIn){
-                document.querySelector('.i_w .center div').innerHTML =
-                  `<crowdin-button primary onclick="integrationLogin()">Loggin with ${manifest.name}</crowdin-button>`;
-              } else {
-                let el = document.querySelector('.i_w');
-                let template = document.getElementById('integration');
-                el.innerHTML = '';
-                el.appendChild(template.content.cloneNode(true));
-                prepareComponent();
-              }
-            }).catch(e => {
-            catchRejection(e);
-          });
-        };
-
-        isInstalled();
-
-        function integrationLogin () {
-            fetch('/integration-login' + restParams)
-                .then((response) => {
-                    return response.json();
-                })
-                .then((res) => {
-                    var left = screen.width / 2 - 300;
-                    var top = screen.height / 2 - 350;
-                    var config = 'toolbar=no, menubar=no, width=600, height=700, top=' + top + ', left=' + left;
-                    window.open(res.url, manifest.name, config);
-                }).catch(e => {
-                    catchRejection(e);
-                });
-        };
-
-        window.addEventListener('message', handleMessage);
-        function handleMessage(event) {
-          if (event.data === 'reload') {
-            isInstalled();
+  function checkResponse(response) {
+    return new Promise((resolve, reject) => {
+      response.json()
+        .then(res => {
+          if(response.status !== 200) {
+            reject();
+          } else {
+            resolve(res);
           }
-        }
-
-        let data = JSON.parse(window.name);
-        // Listener for receive data
-        window.addEventListener('message', function(event) {
-        if (event.origin !== data.app.origin) {
-            return;
-        }
-        let token = JSON.parse(event.data).tokenJWT;
+        })
+        .catch(e => {
+          reject(e);
         });
-        // request for new token
-        window.parent.postMessage(
-        JSON.stringify({
-            client_id: data.client_id,
-            command: 'token',
-            uid: 'random string',
-            data: {}
-        }), 
-        data.app.origin
-        );
+    });
+  }
 
-        function prepareComponent () {
-            let el = document.querySelector('crowdin-simple-integration');
-            document.querySelector('.top').innerHTML = `<crowdin-button outlined onclick="integrationLogOut()">Change ${manifest.name} account</crowdin-button>`;
-            el.setAttribute('integration-name', manifest.name);
-            el.setAttribute('integration-logo', 'https://images.ctfassets.net/bx16dovk9m7p/4xeG846otOi8Sc0uWOY6Qm/fbf539fdca119ce5f58913aa40accb6f/favicon-196x196.png');
-            el.setAttribute('is-crowdin-loading', true);
-            el.setAttribute('is-integration-loading', true);
-            getIntegrationFiles();
-            getCrowdinFiles();
+  if(!origin || !client_id || !tokenJwt) {
+    catchRejection(null, 'Request has no origin data (clientId, tokenJWT)');
+  }
+
+  (function getManifest() {
+    fetch('/manifest.json')
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then((res) => {
+        manifest = res;
+        document.title = res.name;
+        document.querySelector('.i_w h1').innerText = manifest.name;
+      })
+      .catch(e => {
+        catchRejection(e, 'Can\'t fetch manifest.json');
+      });
+  })();
+
+  function isInstalled() {
+    fetch('/status' + restParams)
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then((res) => {
+        if(!res.isInstalled) {
+          document.querySelector('.i_w .center div').innerHTML =
+            `<h1>Looks like ${manifest.name} is not installed yet!</h1>
+                        <p>Contact your organization administrator to install it. More info on <a href='https://support.crowdin.com'>Link to how to install</a></p>`;
+        } else if(!res.isLoggedIn) {
+          document.querySelector('.i_w .center div').innerHTML =
+            `<crowdin-button primary onclick="integrationLogin()">Loggin with ${manifest.name}</crowdin-button>`;
+        } else {
+          let el = document.querySelector('.i_w');
+          let template = document.getElementById('integration');
+          el.innerHTML = '';
+          el.appendChild(template.content.cloneNode(true));
+          prepareComponent();
         }
+      }).catch(e => {
+      catchRejection(e, 'Can\'t check instalation status');
+    });
+  };
 
-        function getIntegrationFiles () {
-            fetch('/integration-data' + restParams)
-                .then((response) => {
-                    return response.json();
-                })
-                .then((res) => {
-                    let el = document.querySelector('crowdin-simple-integration');
-                    el.setIntegrationFilesData(res.map(({title, ...rest}) => ({name: title, icon: 'https://images.ctfassets.net/bx16dovk9m7p/4xeG846otOi8Sc0uWOY6Qm/fbf539fdca119ce5f58913aa40accb6f/favicon-196x196.png', parent_id: 0, ...rest})));
-                    el.setAttribute('is-integration-loading', false);
-                }).catch(e => {
-                    console.log(e);
-                    catchRejection(e);
-                });
-        }
+  isInstalled();
 
-        function getCrowdinFiles () {
-            fetch('/crowdin-data' + restParams)
-                .then((response) => {
-                    return response.json();
-                })
-                .then((res) => {
-                  let el = document.querySelector('crowdin-simple-integration');
-                  console.log(res);
-                  el.setCrowdinFilesData(res.map(({directoryId, branchId, ...rest}) => ({...rest, parent_id: directoryId || branchId || 0})));
-                  el.setAttribute('is-crowdin-loading', false);
-                }).catch(e => {
-                    catchRejection(e);
-                });
-        }
+  function integrationLogin() {
+    fetch('/integration-login' + restParams)
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then((res) => {
+        var left = screen.width / 2 - 300;
+        var top = screen.height / 2 - 350;
+        var config = 'toolbar=no, menubar=no, width=600, height=700, top=' + top + ', left=' + left;
+        window.open(res.url, manifest.name, config);
+      }).catch(e => {
+      catchRejection(e, 'Can\'t fetch integration login url');
+    });
+  };
 
-        function integrationLogOut () {
-            fetch('/integration-log-out' + restParams)
-                .then( res => {
-                    let el = document.querySelector('.i_w');
-                    el.innerHTML =
-                        `<div class='center'><div><crowdin-button primary onclick="integrationLogin()">Loggin with ${manifest.name}</crowdin-button></div></div>`;
-                    integrationLogin();  // immidiatly show login form again
-                })
-                .catch( e => {
-                    catchRejection(e);
-                })
-        }
+  window.addEventListener('message', handleMessage);
 
-        function uploadFilesToCrowdin(e) {
-            console.log(e.detail);
-            const fileIds = event.detail.map(file => file.id);
-            let el = document.querySelector('crowdin-simple-integration');
-            el.setAttribute('is-to-crowdin-process', true);
-            fetch('/upload-to-crowdin' + restParams, {
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(fileIds)
-            })
-            .then( res => {
-                console.log('update res', res);
-                el.setAttribute('is-to-crowdin-process', false);
-                getCrowdinFiles();
-            })
-            .catch( e => {
-                catchRejection(e);
-            });
-        }
+  function handleMessage(event) {
+    if(event.data === 'reload') {
+      isInstalled();
+    }
+  }
 
-        function uploadFilesToIntegration(e) {
-            console.log(e.detail);
-            const fileIds = event.detail.map(file => file.name.replace('.json', ''));
-            let el = document.querySelector('crowdin-simple-integration');
-            el.setAttribute('is-to-integration-process', true);
-            fetch('/upload-to-integration' + restParams, {
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(fileIds)
-            })
-            .then( res => {
-                console.log('update res', res);
-                el.setAttribute('is-to-integration-process', false);
-                getIntegrationFiles();
-            })
-            .catch( e => {
-                catchRejection(e);
-            });
-        }
+  let data = JSON.parse(window.name);
+  // Listener for receive data
+  window.addEventListener('message', function(event) {
+    if(event.origin !== data.app.origin) {
+      return;
+    }
+    let token = JSON.parse(event.data).tokenJWT;
+  });
+  // request for new token
+  window.parent.postMessage(
+    JSON.stringify({
+      client_id: data.client_id,
+      command: 'token',
+      uid: 'random string',
+      data: {}
+    }),
+    data.app.origin
+  );
 
-        document.body.addEventListener('uploadFilesToCrowdin', uploadFilesToCrowdin);
-        document.body.addEventListener('uploadFilesToIntegration', uploadFilesToIntegration);
-    </script>
+  function prepareComponent() {
+    let el = document.querySelector('crowdin-simple-integration');
+    document.querySelector('.top').innerHTML = `<crowdin-button outlined onclick="integrationLogOut()">Change ${manifest.name} account</crowdin-button>`;
+    el.setAttribute('integration-name', manifest.name);
+    el.setAttribute('integration-logo', 'https://images.ctfassets.net/bx16dovk9m7p/4xeG846otOi8Sc0uWOY6Qm/fbf539fdca119ce5f58913aa40accb6f/favicon-196x196.png');
+    el.setAttribute('is-crowdin-loading', true);
+    el.setAttribute('is-integration-loading', true);
+    getIntegrationFiles();
+    getCrowdinFiles();
+  }
+
+  function getIntegrationFiles() {
+    fetch('/integration-data' + restParams)
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then((res) => {
+        let el = document.querySelector('crowdin-simple-integration');
+        el.setIntegrationFilesData(res.map(({title, ...rest}) => ({
+          name: title,
+          icon: 'https://images.ctfassets.net/bx16dovk9m7p/4xeG846otOi8Sc0uWOY6Qm/fbf539fdca119ce5f58913aa40accb6f/favicon-196x196.png',
+          parent_id: 0, ...rest
+        })));
+        el.setAttribute('is-integration-loading', false);
+      }).catch(e => {
+      catchRejection(e, 'Can\'t fetch integration files');
+    });
+  }
+
+  function getCrowdinFiles() {
+    fetch('/crowdin-data' + restParams)
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then((res) => {
+        let el = document.querySelector('crowdin-simple-integration');
+        console.log(res);
+        el.setCrowdinFilesData(res.map(({directoryId, branchId, ...rest}) => ({
+          ...rest,
+          parent_id: directoryId || branchId || 0
+        })));
+        el.setAttribute('is-crowdin-loading', false);
+      }).catch(e => {
+      catchRejection(e, 'Can\'t fetch Crowdin files');
+    });
+  }
+
+  function integrationLogOut() {
+    fetch('/integration-log-out' + restParams)
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then(res => {
+        let el = document.querySelector('.i_w');
+        el.innerHTML =
+          `<div class='center'><div><crowdin-button primary onclick="integrationLogin()">Loggin with ${manifest.name}</crowdin-button></div></div>`;
+        integrationLogin();  // immidiatly show login form again
+      })
+      .catch(e => {
+        catchRejection(e, 'Looks like you are not logged in');
+        window.location.reload();
+      })
+  }
+
+  function uploadFilesToCrowdin(e) {
+    if(e.detail.length === 0) {
+      document.querySelector('crowdin-toasts').pushToasts(['Select files that will be uploaded to Crowdin']);
+      return;
+    }
+    const fileIds = event.detail.map(file => file.id);
+    let el = document.querySelector('crowdin-simple-integration');
+    el.setAttribute('is-to-crowdin-process', true);
+    fetch('/upload-to-crowdin' + restParams, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(fileIds)
+    })
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then(res => {
+        showToast('Done');
+        el.setAttribute('is-to-crowdin-process', false);
+        getCrowdinFiles();
+      })
+      .catch(e => {
+        el.setAttribute('is-to-crowdin-process', false);
+        catchRejection(e, 'Can\'t upload files to Crowdin');
+      });
+  }
+
+  function uploadFilesToIntegration(e) {
+    if(e.detail.length === 0) {
+      document.querySelector('crowdin-toasts').pushToasts([`Select files that will be uploaded to ${manifest.name}`]);
+      return;
+    }
+    const fileIds = event.detail.map(file => file.name.replace('.json', ''));
+    let el = document.querySelector('crowdin-simple-integration');
+    el.setAttribute('is-to-integration-process', true);
+    fetch('/upload-to-integration' + restParams, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(fileIds)
+    })
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then(res => {
+        showToast('Done');
+        el.setAttribute('is-to-integration-process', false);
+        getIntegrationFiles();
+      })
+      .catch(e => {
+        el.setAttribute('is-to-integration-process', false);
+        catchRejection(e, 'Can\'t upload files to integration');
+      });
+  }
+
+  document.body.addEventListener('uploadFilesToCrowdin', uploadFilesToCrowdin);
+  document.body.addEventListener('uploadFilesToIntegration', uploadFilesToIntegration);
+</script>
 </body>
 </html>
