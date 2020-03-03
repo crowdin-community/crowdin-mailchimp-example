@@ -1,6 +1,7 @@
 var config = require('./config');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
+const helper = require('./helpers');
+const catchRejection = helper.catchRejection;
 
 module.exports = function(db) {
   return {
@@ -34,50 +35,16 @@ module.exports = function(db) {
           res.integration = integration;
           next();
         })
-        .catch(e => {
-          return res.status(500).send();
-        })
+        .catch(catchRejection('Can\'t find integration by id', res))
     },
     withCrowdinToken: function(req, res, next) {
-      db.organization.findOne({where: {uid: res.origin.domain}})
-        .then((organization) => {
-          if(!organization) {
-            return res.status(404).send();
-          }
-          const isExpired = +organization.expire < +new Date().getTime() / 1000;
-          if(!isExpired) {
-            res.crowdin = {};
-            res.crowdin.token = organization.accessToken;
-            next();
-          } else {
-            let payload = {
-              grant_type: 'refresh_token',
-              client_id: config.authentication.clientId,
-              client_secret: config.clientSecret,
-              refresh_token: organization.refreshToken,
-            };
-            axios.post(process.env.NODE_ENV === 'production' ? 'https://accounts.crowdin.com/oauth/token' : 'http://accounts.yevhen.dev.crowdin.com/oauth/token', payload)
-              .then(response => {
-                let params = {
-                  refreshToken: response.data.refresh_token,
-                  accessToken: response.data.access_token,
-                  expire: (new Date().getTime() / 1000) + response.data.expires_in
-                };
-                return organization.update(params)
-              })
-              .then(organization => {
-                res.crowdin = {};
-                res.crowdin.token = organization.accessToken;
-                next();
-              })
-              .catch(e => {
-                return res.status(500).send();
-              });
-          }
+      db.organization.getOrganization(res)
+        .then(organization => {
+          res.crowdin = {};
+          res.crowdin.token = organization.accessToken;
+          next();
         })
-        .catch(e => {
-          return res.status(500).send();
-        })
+        .catch(catchRejection('Can\'t find organization by id', res));
     }
   }
 };

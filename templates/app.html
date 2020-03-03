@@ -71,18 +71,24 @@
 
   function catchRejection(e, message = undefined) {
     console.log(e);
-    document.querySelector('.i_w .center').innerHTML =
-      `<crowdin-nothing-to-display
-                message="${manifest.name}" 
+    showToast(message);
+    let el = document.querySelector('.i_w .center');
+    if(!!el) {
+      el.innerHTML =
+        `<crowdin-nothing-to-display
+                message="${manifest.name}"
                 sub-message="It's not a problem with crowdin, it's something on app backend"
             ></crowdin-nothing-to-display>`;
-    showToast(message);
+    }
   }
 
   function checkResponse(response) {
     return new Promise((resolve, reject) => {
       if(response.status === 204) {
         return resolve();
+      }
+      if(response.status === 500) {
+        return reject(500);
       }
       response.json()
         .then(res => {
@@ -109,29 +115,36 @@
   }
 
   function parentWindowPostMessage(data) {
-    window.parent.postMessage(
-      JSON.stringify(data),
-      origin
-    );
+    return new Promise ( (resolve, reject) => {
+      window.parent.postMessage(
+        JSON.stringify(data),
+        origin
+      );
+      let tId = setTimeout(() => {
+        reject();
+      }, 10000);
+      postPromises[data.uid] = {resolve: resolve, timer: tId};
+    });
   }
 
   function checkOrigin() {
-    let time = new Date().getTime();
     return new Promise((resolve, reject) => {
       try {
         let tokenData = parseJwt(tokenJwt);
         if(tokenData.exp < parseInt(new Date().getTime() / 1000)) {
-          window.tokenJwt = null;
-
-          postPromises[time] = resolve;
 
           // request for new token
           parentWindowPostMessage({
             client_id: client_id,
             command: 'token',
-            uid: time,
+            uid: new Date().getTime(),
             data: {}
-          });
+          })
+            .then((eventData) => {
+              restParams = `?origin=${origin}&client_id=${client_id}&tokenJwt=${eventData.tokenJwt}`;
+              resolve(restParams);
+            })
+            .catch(() => reject());
 
         } else {
           resolve(restParams);
@@ -216,11 +229,9 @@
       isInstalled();
     } else {
       let eventData = JSON.parse(event.data);
-      if(eventData.command === 'token' && event.origin === origin && postPromises[eventData.uid]) {
-        restParams = `?origin=${origin}&client_id=${client_id}&tokenJwt=${eventData.data.tokenJwt}`;
-        postPromises[eventData.uid](restParams);
-      } else if (postPromises[eventData.uid]) {
-        postPromises[eventData.uid](eventData.data);
+      if (postPromises[eventData.uid]) {
+        clearTimeout(postPromises[eventData.uid].timer);
+        postPromises[eventData.uid].resolve(eventData.data);
       }
     }
   }
@@ -237,6 +248,7 @@
   }
 
   function getIntegrationFiles() {
+    let el = document.querySelector('crowdin-simple-integration');
     checkOrigin()
       .then(restParams => {
         return fetch('/integration-data' + restParams);
@@ -245,16 +257,13 @@
         return checkResponse(response);
       })
       .then((res) => {
-        let el = document.querySelector('crowdin-simple-integration');
-        el.setIntegrationFilesData(res.map(({title, ...rest}) => ({
-          name: title,
-          icon: '/assets/logo.png',
-          parent_id: 0, ...rest
-        })));
+        el.setIntegrationFilesData(res);
         el.setAttribute('is-integration-loading', false);
-      }).catch(e => {
-      catchRejection(e, 'Can\'t fetch integration files');
-    });
+      })
+      .catch(e => {
+        el.setAttribute('is-integration-loading', false);
+        catchRejection(e, 'Can\'t fetch integration files');
+      });
   }
 
   function getCrowdinFiles() {
@@ -267,10 +276,7 @@
       })
       .then((res) => {
         let el = document.querySelector('crowdin-simple-integration');
-        el.setCrowdinFilesData(res.map(({directoryId, branchId, ...rest}) => ({
-          ...rest,
-          parent_id: directoryId || branchId || 0
-        })));
+        el.setCrowdinFilesData(res);
         el.setAttribute('is-crowdin-loading', false);
       }).catch(e => {
       catchRejection(e, 'Can\'t fetch Crowdin files');

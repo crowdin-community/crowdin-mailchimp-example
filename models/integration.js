@@ -1,88 +1,97 @@
-var _ = require('underscore');
+const axios = require('axios');
 var jwt = require('jsonwebtoken');
+const qs = require('querystring');
+const config = require('./../config');
+const {createClient: createIntegrationClient} = require('@typeform/api-client');
 
-const jwtSecret = '23544325dfafdasdf!#@%#dd';
-const cryptoSecret = 'asdfasdfasdlkk!!@';
-
-module.exports = function(sequelize, DataTypes){
-    const Integration = sequelize.define('Integration',{
-        uid: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        integrationToken: {
-            type: DataTypes.STRING,
-        },
-        integrationRefreshToken: {
-            type: DataTypes.STRING,
-        },
-        integrationTokenExpiresIn: {
-            type: DataTypes.STRING,
-        },
-        mapingFiles: {
-            type: DataTypes.STRING,
-        }
-    });
-
-   
-
-
-    // User.prototype.generateToken = function (type) {
-    //     if(typeof type !== 'string'){
-    //         return undefined;
-    //     }
-
-    //     try{
-    //         var stringData = JSON.stringify({id: this.get('id'), type: type});
-    //         var encryptedData = cryptojs.AES.encrypt(stringData, cryptoSecret).toString();
-    //         var token = jwt.sign({
-    //             token: encryptedData
-    //         }, jwtSecret);
-    //         return token;
-    //     } catch (e) {
-    //         return undefined;
-    //     }
-    // }
-
-    Integration.authenticate = function (body){
-        return new Promise (function(resolv, reject){
-            if(typeof body.email !== 'string' || typeof body.password !== 'string'){
-                reject();
-            }
-            User.findOne({where: {
-                email: body.email
-            }}).then(function(user){
-                if(!user || !bcrypt.compareSync(body.password, user.get('password_hash'))){
-                    reject();
-                }
-                resolv(user);
-            })
-        })
+module.exports = function(sequelize, DataTypes) {
+  const Integration = sequelize.define('Integration', {
+    uid: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    integrationToken: {
+      type: DataTypes.STRING,
+    },
+    integrationRefreshToken: {
+      type: DataTypes.STRING,
+    },
+    integrationTokenExpiresIn: {
+      type: DataTypes.STRING,
+    },
+    mapingFiles: {
+      type: DataTypes.STRING,
     }
+  });
 
-    // User.findByToken = function (token){
-    //     return new Promise (function(resolv, reject){
-    //         try {
-    //             var decodedJWT = jwt.verify(token, jwtSecret);
-    //             var bytes = cryptojs.AES.decrypt(decodedJWT.token, cryptoSecret);
-    //             var tokenData =  JSON.parse(bytes.toString(cryptojs.enc.Utf8));
+  Integration.getLoginUrl = function (res) {
+    return new Promise ( (resolve, reject) => {
+      let clientId = null;
+      try {
+        clientId = jwt.sign({clientId: res.clientId}, config.clientSecret);
+      } catch(e) {
+        reject();
+      }
+      resolve(`https://api.typeform.com/oauth/authorize?client_id=${config.integrationClientId}&redirect_uri=${config.callbackUrl}&scope=${config.scope}&state=${clientId}`);
+    });
+  };
 
-    //             User.findOne({where: {
-    //                 id: tokenData.id
-    //             }}).then(function(user){
-    //                 if(!user){
-    //                     reject();
-    //                 }
-    //                 resolv(user);
-    //             }, function(e){
-    //                 reject()
-    //             })
-    //         } catch (e) {
-    //             reject();
-    //         }
-    //     })
-    // }
+  Integration.setupToken = function (req) {
+    return new Promise ((resolve, reject) => {
+      var clientId = null;
+      try {
+        clientId = (jwt.verify(req.query.state, config.clientSecret) || {}).clientId;
+      } catch(e) {
+        reject('Cant decode JWT', e);
+      }
+      const payload = {
+        grant_type: 'authorization_code',
+        code: req.query.code,
+        client_id: config.integrationClientId,
+        client_secret: config.integrationSecret,
+        redirect_uri: config.callbackUrl,
+      };
+      let tokenRes = {};
+      return axios.post(`https://api.typeform.com/oauth/token`, qs.stringify(payload))
+        .then((response) => {
+          tokenRes = response;
+          return Integration.findOne({where: {uid: clientId}})
+        })
+        .then((integration) => {
+          let params = {
+            integrationTokenExpiresIn: (new Date().getTime()/1000) + +tokenRes.data.expires_in,
+            integrationToken: tokenRes.data.access_token,
+            integrationTokenType: tokenRes.data.token_type,
+            integrationRefreshToken: tokenRes.data.refresh_token || '',
+          };
+          if(integration) {
+            return integration.update(params);
+          } else {
+            params.uid = clientId;
+            return Integration.create(params);
+          }
+        })
+        .then(() => resolve())
+        .catch(e => reject('Cant update token', e));
+    });
+  };
 
-    return Integration;
+  Integration.getData = function (res) {
+    return new Promise ( (resolve, reject) => {
+      const typeformAPI = createIntegrationClient({token: res.integration.integrationToken});
+      typeformAPI.forms.list()
+        .then((response) => {
+          resolve(response.items.map(({title, ...rest}) => ({
+            name: title,
+            icon: '/assets/logo.png',
+            parent_id: 0,
+            ...rest
+          })));
+        })
+        .catch(e => reject('Cant fetch data from integration', e));
+    });
+  };
+
+  return Integration;
 };
