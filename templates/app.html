@@ -196,6 +196,7 @@
           el.innerHTML = '';
           el.appendChild(template.content.cloneNode(true));
           prepareComponent();
+          getProjectData();
         }
       }).catch(e => {
       catchRejection(e, 'Can\'t check instalation status');
@@ -238,17 +239,16 @@
 
   function prepareComponent() {
     let el = document.querySelector('crowdin-simple-integration');
-    document.querySelector('.top').innerHTML = `<crowdin-button outlined onclick="integrationLogOut()">Change ${manifest.name} account</crowdin-button>`;
+    document.querySelector('.top').innerHTML = `<crowdin-button icon-before="account_circle" onclick="integrationLogOut()">Change account</crowdin-button>`;
     el.setAttribute('integration-name', manifest.name);
     el.setAttribute('integration-logo', '/assets/logo.png');
-    el.setAttribute('is-crowdin-loading', true);
-    el.setAttribute('is-integration-loading', true);
     getIntegrationFiles();
     getCrowdinFiles();
   }
 
   function getIntegrationFiles() {
     let el = document.querySelector('crowdin-simple-integration');
+    el.setAttribute('is-integration-loading', true);
     checkOrigin()
       .then(restParams => {
         return fetch('/integration-data' + restParams);
@@ -267,6 +267,8 @@
   }
 
   function getCrowdinFiles() {
+    let el = document.querySelector('crowdin-simple-integration');
+    el.setAttribute('is-crowdin-loading', true);
     checkOrigin()
       .then(restParams => {
         return fetch('/crowdin-data' + restParams)
@@ -275,12 +277,63 @@
         return checkResponse(response);
       })
       .then((res) => {
-        let el = document.querySelector('crowdin-simple-integration');
-        el.setCrowdinFilesData(res);
+        setTimeout(() => {
+          el.setCrowdinFilesData(res);
+          el.setAttribute('is-crowdin-loading', false);
+        }, 500);
+      })
+      .catch(e => {
         el.setAttribute('is-crowdin-loading', false);
-      }).catch(e => {
-      catchRejection(e, 'Can\'t fetch Crowdin files');
-    });
+        catchRejection(e, 'Can\'t fetch Crowdin files');
+      });
+  }
+
+  function getProjectData() {
+    checkOrigin()
+      .then(restParams => {
+        return fetch('/get-project-data' + restParams)
+      })
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then((res) => {
+        setTimeout(() => {
+          let el = document.querySelector('crowdin-simple-integration');
+          el.setCrowdinLanguagesData(res.projectTargetLanguages);
+        }, 2000);
+      })
+      .catch(e => {
+        catchRejection(e, 'Can\'t fetch project data');
+      });
+  }
+
+  function crowdinFilesFolderToggled (event) {
+    if(event.detail.componentId === 'crowdin-files' && event.detail.isOpen) {
+      getFileProgress(event.detail.id);
+    }
+  }
+
+  document.body.addEventListener('crowdinFilesFolderToggled', crowdinFilesFolderToggled);
+
+  function getFileProgress(fileId) {
+    checkOrigin()
+      .then(restParams => {
+        return fetch('/get-file-progress' + restParams, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({fileId})
+        })
+      })
+      .then((response) => {
+        return checkResponse(response);
+      })
+      .then((res) => {
+        let el = document.querySelector('crowdin-simple-integration');
+        el.addCrowdinFileProgress(res);
+      })
+      .catch(e => {
+        catchRejection(e, 'Can\'t fetch file progress');
+      });
   }
 
   function integrationLogOut() {
@@ -303,9 +356,17 @@
       })
   }
 
+  function refreshFilesList (e) {
+    if(e.detail.refreshIntegration){
+      getIntegrationFiles();
+    } else if (e.detail.refreshCrowdin){
+      getCrowdinFiles();
+    }
+  }
+
   function uploadFilesToCrowdin(e) {
     if(e.detail.length === 0) {
-      document.querySelector('crowdin-toasts').pushToasts(['Select files that will be uploaded to Crowdin']);
+      document.querySelector('crowdin-toasts').pushToasts(['Select files that will be downloaded to Crowdin']);
       return;
     }
     const fileIds = event.detail.map(file => file.id);
@@ -338,7 +399,7 @@
       document.querySelector('crowdin-toasts').pushToasts([`Select files that will be uploaded to ${manifest.name}`]);
       return;
     }
-    const fileIds = event.detail.map(file => file.name.replace('.json', ''));
+    const fileIds = event.detail;
     let el = document.querySelector('crowdin-simple-integration');
     el.setAttribute('is-to-integration-process', true);
     checkOrigin()
@@ -362,7 +423,7 @@
         catchRejection(e, 'Can\'t upload files to integration');
       });
   }
-
+  document.body.addEventListener('refreshFilesList', refreshFilesList);
   document.body.addEventListener('uploadFilesToCrowdin', uploadFilesToCrowdin);
   document.body.addEventListener('uploadFilesToIntegration', uploadFilesToIntegration);
 </script>
