@@ -63,6 +63,12 @@ app.get('/integration-data', middleware.requireAuthentication, middleware.withIn
     .catch(catchRejection('Cant fetch integration data', res));
 });
 
+app.get('/mapping', (req, res) => {
+  db.mapping.findAll()
+    .then(r => res.json(r))
+    .catch(catchRejection('Cant fetch mappings', res));
+});
+
 // app.get('/organizations', (req, res) => {
 //   db.organization.findAll()
 //   .then(organizations => {
@@ -79,8 +85,8 @@ app.get('/integration-data', middleware.requireAuthentication, middleware.withIn
 //     .catch(catchRejection('Cant fetch integrations', res));
 // });
 
-app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdinToken, (req, res) => {
-  db.organization.getProjectData(res)
+app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdinToken, middleware.withIntegration, (req, res) => {
+  db.organization.getProjectFiles(res, db)
     .then(response => res.json(response))
     .catch(catchRejection('Cant fetch data from Crowdin', res));
 });
@@ -91,7 +97,19 @@ app.post('/installed', (req, res) => {
     .catch(catchRejection('Cant install application', res));
 });
 
-app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdinToken, crowdinUpdate()); 
+app.post('/get-file-progress', middleware.requireAuthentication, middleware.withCrowdinToken, (req, res) => {
+  db.organization.getFileProgress(req, res)
+    .then((progress) => res.json(progress))
+    .catch(catchRejection('Cant fetch progress for file', res));
+});
+
+app.get('/get-project-data', middleware.requireAuthentication, middleware.withCrowdinToken, (req, res) => {
+  db.organization.getProjectData(res)
+    .then((project) => res.json(project))
+    .catch(catchRejection('Cant fetch project data', res));
+});
+
+app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdinToken, crowdinUpdate(db));
 
 app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdinToken, typeformUpdate());
 

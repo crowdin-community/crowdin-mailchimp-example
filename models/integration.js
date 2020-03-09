@@ -20,9 +20,6 @@ module.exports = function(sequelize, DataTypes) {
     integrationTokenExpiresIn: {
       type: DataTypes.STRING,
     },
-    mapingFiles: {
-      type: DataTypes.STRING,
-    }
   });
 
   Integration.getLoginUrl = function (res) {

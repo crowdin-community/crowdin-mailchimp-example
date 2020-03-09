@@ -1,232 +1,180 @@
-const { createClient } = require('@typeform/api-client');
+const {createClient} = require('@typeform/api-client');
 const crowdin = require('@crowdin/crowdin-api-client').default;
 const AdmZip = require('adm-zip');
 const axios = require('axios').default;
 
-// function typeformUpdate() {
-//     return (req, res) => {
-//         return new Promise ((resolve, reject) => {
-//             const typeformAPI = createClient({ token: res.integration.integrationToken });
-//             const crowdinApi = new crowdin({
-//                 token: res.crowdin.token,
-//                 organization: res.origin.domain
-//             });
-//             const formIds = req.body;
-//             const projectId = res.origin.context.project_id;
-//             let forms = [];
-//             typeformAPI.forms.list()
-//             .then(response => {
-//                 forms = response.items;
-//                 return new Promise ((resolve, reject) => {
-//                     crowdinApi.translationsApi.buildProject(projectId, {})
-//                     .then(build => {
-//                         let finished = false;
-//                         while (!finished) {
-//                             crowdinApi.translationsApi.checkBuildStatus(projectId, build.data.id)
-//                             .then(status => {
-//                                 finished = status.data.status === 'finished';
-//                                 console.log("Still checking build");
-//                             })
-//                             .catch( e => { console.log(e); res.status(500).send(); reject(); })
-//                         }
-//                         resolve(build);
-//                     })
-//                     .catch( e => {
-//                         console.log(e);
-//                         res.status(500).send();
-//                         reject();
-//                     })
-//                 })
-//             })
-//             .then( build => {
-//                 return crowdinApi.translationsApi.downloadTranslations(projectId, build.data.id)
-//             })
-//             .then( downloadLink => {
-//                 return axios.get(downloadLink.data.url, { responseType: 'arraybuffer' })
-//             })
-//             then( response => {
-//                 const zip = new AdmZip(response.data);
-//                 const zipEntries = zip.getEntries();
-//             })
-//         })
-//     }
-// }
+const helper = require('./helpers');
+const catchRejection = helper.catchRejection;
+
+const supportedLanguages = [
+  { name: 'Catalan', code: 'ca' },
+  { name: 'Chinese (simplified)', code: 'zh-CN' },
+  { name: 'Chinese (traditional)', code: 'zh-TW' },
+  { name: 'Croatian', code: 'hr' },
+  { name: 'Czech', code: 'cs' },
+  { name: 'Danish', code: 'da' },
+  { name: 'Dutch', code: 'nl' },
+  { name: 'English', code: 'en' },
+  { name: 'Estonian', code: 'et' },
+  { name: 'Finnish', code: 'fi' },
+  { name: 'French', code: 'fr' },
+  { name: 'Greek', code: 'el' },
+  { name: 'German', code: 'de' },
+  { name: 'Hungarian', code: 'hu' },
+  { name: 'Italian', code: 'it' },
+  { name: 'Japanese', code: 'ja' },
+  { name: 'Korean', code: 'ko' },
+  { name: 'Norwegian', code: 'no' },
+  { name: 'Polish', code: 'pl' },
+  { name: 'Portuguese', code: 'pt' },
+  { name: 'Russian', code: 'ru' },
+  { name: 'Spanish', code: 'es' },
+  { name: 'Swedish', code: 'sv' },
+  { name: 'Turkish', code: 'tr' },
+  { name: 'Ukrainian', code: 'uk' }
+].map(l => l.code);
 
 function typeformUpdate() {
-    return async (req, res) => {
-        try {
-            const typeformAPI = createClient({ token: res.integration.integrationToken });
-            const crowdinApi = new crowdin({
-                token: res.crowdin.token,
-                organization: res.origin.domain
+  return (req, res) => {
+    const typeformAPI = createClient({token: res.integration.integrationToken});
+    const crowdinApi = new crowdin({
+      token: res.crowdin.token,
+      organization: res.origin.domain
+    });
+    const formsTranslations = req.body;
+    const projectId = res.origin.context.project_id;
+
+    const translations = Object.keys(formsTranslations).reduce((acc, fileId) =>
+      ([...acc, ...formsTranslations[fileId].map(lId =>
+        ({fileId: fileId, languageId: lId})
+      )]), []
+    );
+
+    let filesById = {};
+    let fullFormsById = {};
+    let integrationFilesList = [];
+    typeformAPI.forms.list()
+      .then(list => {
+        integrationFilesList = list.items;
+        return Promise.all(Object.keys(formsTranslations).map( fId => crowdinApi.sourceFilesApi.getFile(projectId, fId)))
+      })
+      .then( responses => {
+        filesById = responses.reduce((acc,fileData) => ({...acc, [`${fileData.data.id}`]: fileData.data}), {});
+        return Promise.all(Object.values(filesById).map(({title: formUID}) => typeformAPI.forms.get({uid: formUID})))
+      })
+      .then( responses => {
+        fullFormsById = responses.reduce((acc, form) => ({...acc, [`${form.id}`]: form}), {});
+        return Promise.all(translations.map(t => crowdinApi.translationsApi.buildProjectFileTranslation(projectId, t.fileId, {targetLanguageId: t.languageId, exportAsXliff: false})))
+      })
+      .then( responses => {
+        return Promise.all(responses.map(r => axios.get(r.data.url)))
+      })
+      .then( buffers => {
+        const translatedFilesData = buffers.map(b => b.data);
+        return Promise.all(translations.map((t, index) => {
+          const fileName = `${filesById[t.fileId].name.replace('.json','')}/${t.languageId}/crowdin-translate`;
+          const integrationTranslationFile = integrationFilesList.find(f => f.title === fileName);
+          if(integrationTranslationFile){
+            return typeformAPI.forms.get({uid: integrationTranslationFile.id})
+              .then(form => {
+                let formToUpdate = form;
+                formToUpdate = updateForm(formToUpdate, translatedFilesData[index]);
+                  return typeformAPI.forms.update({uid: formToUpdate.id, override: true, data: {...formToUpdate}});
+              })
+          } else {
+            let form = fullFormsById[filesById[t.fileId].title];
+            delete form.id;
+
+            form.title = fileName;
+            form.settings.language = supportedLanguages.includes(t.languageId) ? t.languageId : 'en';
+            form = updateForm(form, translatedFilesData[index]);
+            // remove ids to create form ------------------------------>
+            // todo: refactor next code to recursive functions
+            form.fields.forEach(f => {
+              delete f.id;
+              if((f.properties || {}).fields){
+                f.properties.fields.forEach(field => {
+                  delete field.id;
+                  if((field.properties || {}).choices){
+                    field.properties.choices.forEach(choice => delete choice.id);
+                  }
+                });
+              }
+              if((f.properties || {}).choices){
+                f.properties.choices.forEach(choice => delete choice.id);
+              }
             });
-            const formIds = req.body;
-            const projectId = res.origin.context.project_id;
 
-            let forms = await typeformAPI.forms.list();
-            forms = forms.items;
-
-            const build = await crowdinApi.translationsApi.buildProject(projectId, {});
-
-            let finished = false;
-
-            while (!finished) {
-                const status = await crowdinApi.translationsApi.checkBuildStatus(projectId, build.data.id);
-                finished = status.data.status === 'finished';
-                console.log("Still checking build");
-            }
-
-            console.log('Built well');
-
-            const downloadLink = await crowdinApi.translationsApi.downloadTranslations(projectId, build.data.id);
-
-            const resp = await axios.get(downloadLink.data.url, { responseType: 'arraybuffer' });
-            const zip = new AdmZip(resp.data);
-            const zipEntries = zip.getEntries();
-            
-            for (let i = 0; i < formIds.length; i++) {
-                const formId = formIds[i];
-                const entries = zipEntries.filter(entry => {
-                    const parst = entry.entryName.split('/');
-                    if (parst.length === 2) {
-                        return entry.entryName.split('/')[1] === `${formId}.json`;
-                    }
-                    return false;
-                });
-
-                console.log('here', entries, formIds, zipEntries.map(e => e.entryName.split('/')[1]));
-
-                const promises = entries.map(async entry => {
-                    const translationLanguage = entry.entryName.split('/')[0];
-                    const translations = JSON.parse(entry.getData().toString('utf8'));
-
-                    let form = await typeformAPI.forms.get({ uid: formId });
-
-                    form.title = `${form.title} [${translationLanguage}]lang`;
-
-                    let formToUpdate = forms.find(f => f.title === form.title);
-
-                    if (!formToUpdate) {
-                        delete form.id;
-                        form = updateForm(form, translations, true);
-
-                        form.settings.language = translationLanguage;
-
-                        console.log(`Creating form ${form.title}`);
-                        try {
-                            await typeformAPI.forms.create({
-                                data: {
-                                    title: form.title,
-                                    settings: form.settings,
-                                    theme: form.theme,
-                                    workspace: form.workspace,
-                                    hidden: form.hidden,
-                                    variables: form.variables,
-                                    welcome_screens: form.welcome_screens,
-                                    thankyou_screens: form.thankyou_screens,
-                                    fields: form.fields,
-                                    logic: form.logic
-                                }
-                            });
-                        } catch (e) {
-                            console.log(JSON.stringify(e));
-                        }
-
-                    } else {
-                        formToUpdate = await typeformAPI.forms.get({ uid: formToUpdate.id });
-
-                        formToUpdate = updateForm(formToUpdate, translations, false);
-
-                        formToUpdate.settings.language = translationLanguage;
-
-                        console.log(`Updating form ${formToUpdate.title}`);
-                        await typeformAPI.forms.update({
-                            uid: formToUpdate.id, override: true, data: {
-                                title: formToUpdate.title,
-                                settings: formToUpdate.settings,
-                                theme: formToUpdate.theme,
-                                workspace: formToUpdate.workspace,
-                                hidden: formToUpdate.hidden,
-                                variables: formToUpdate.variables,
-                                welcome_screens: formToUpdate.welcome_screens,
-                                thankyou_screens: formToUpdate.thankyou_screens,
-                                fields: formToUpdate.fields,
-                                logic: formToUpdate.logic
-                            }
-                        })
-                    }
-                });
-                await Promise.all(promises);
-            }
-            res.send({ success: true });
-        } catch (error) {
-            res.send({ success: false });
-        }
-    };
+            return typeformAPI.forms.create({ data: {...form} });
+          }
+        }));
+      })
+      .then(responses => {
+        res.status(200).json(responses);
+      })
+      .catch(catchRejection('Cant upload files to integration', res));
+  }
 }
 
-function updateForm(form, translations, cleanIds) {
-    Object.keys(translations).forEach(trKey => {
-        if (trKey.endsWith('_field')) {
-            const txt = translations[trKey];
-            const ref = trKey.split('_field')[0];
-            const fields = form.fields || [];
-            for (let i = 0; i < fields.length; i++) {
-                if (fields[i].ref === ref) {
-                    form.fields[i].title = txt;
-                    if (cleanIds) {
-                        form.fields[i].id = undefined;
-                    }
-                }
-            }
-            return;
+function updateForm(form, translations) {
+  Object.keys(translations).forEach(trKey => {
+    if(trKey.endsWith('_field')) {
+      const txt = translations[trKey];
+      const ref = trKey.split('_field')[0];
+      const fields = form.fields || [];
+      for(let i = 0; i < fields.length; i++) {
+        if(fields[i].ref === ref) {
+          form.fields[i].title = txt.toString('utf8');
         }
-        if (trKey.endsWith('_button_welcome_screen')) {
-            const txt = translations[trKey];
-            const ref = trKey.split('_button_welcome_screen')[0];
-            const wScreens = form.welcome_screens || [];
-            for (let i = 0; i < wScreens.length; i++) {
-                if (wScreens[i].ref === ref) {
-                    form.welcome_screens[i].properties.button_text = txt;
-                }
-            }
-            return;
+      }
+      return;
+    }
+    if(trKey.endsWith('_button_welcome_screen')) {
+      const txt = translations[trKey];
+      const ref = trKey.split('_button_welcome_screen')[0];
+      const wScreens = form.welcome_screens || [];
+      for(let i = 0; i < wScreens.length; i++) {
+        if(wScreens[i].ref === ref) {
+          form.welcome_screens[i].properties.button_text = txt;
         }
-        if (trKey.endsWith('_welcome_screen')) {
-            const txt = translations[trKey];
-            const ref = trKey.split('_welcome_screen')[0];
-            const wScreens = form.welcome_screens || [];
-            for (let i = 0; i < wScreens.length; i++) {
-                if (wScreens[i].ref === ref) {
-                    form.welcome_screens[i].title = txt;
-                }
-            }
-            return;
+      }
+      return;
+    }
+    if(trKey.endsWith('_welcome_screen')) {
+      const txt = translations[trKey];
+      const ref = trKey.split('_welcome_screen')[0];
+      const wScreens = form.welcome_screens || [];
+      for(let i = 0; i < wScreens.length; i++) {
+        if(wScreens[i].ref === ref) {
+          form.welcome_screens[i].title = txt;
         }
-        if (trKey.endsWith('_button_thankyou_screens')) {
-            const txt = translations[trKey];
-            const ref = trKey.split('_button_thankyou_screens')[0];
-            const tScreens = form.thankyou_screens || [];
-            for (let i = 0; i < tScreens.length; i++) {
-                if (tScreens[i].ref === ref) {
-                    form.thankyou_screens[i].properties.button_text = txt;
-                }
-            }
-            return;
+      }
+      return;
+    }
+    if(trKey.endsWith('_button_thankyou_screens')) {
+      const txt = translations[trKey];
+      const ref = trKey.split('_button_thankyou_screens')[0];
+      const tScreens = form.thankyou_screens || [];
+      for(let i = 0; i < tScreens.length; i++) {
+        if(tScreens[i].ref === ref) {
+          form.thankyou_screens[i].properties.button_text = txt;
         }
-        if (trKey.endsWith('_thankyou_screens')) {
-            const txt = translations[trKey];
-            const ref = trKey.split('_thankyou_screens')[0];
-            const tScreens = form.thankyou_screens || [];
-            for (let i = 0; i < tScreens.length; i++) {
-                if (tScreens[i].ref === ref) {
-                    form.thankyou_screens[i].title = txt;
-                }
-            }
-            return;
+      }
+      return;
+    }
+    if(trKey.endsWith('_thankyou_screens')) {
+      const txt = translations[trKey];
+      const ref = trKey.split('_thankyou_screens')[0];
+      const tScreens = form.thankyou_screens || [];
+      for(let i = 0; i < tScreens.length; i++) {
+        if(tScreens[i].ref === ref) {
+          form.thankyou_screens[i].title = txt;
         }
-    });
-    return form;
+      }
+      return;
+    }
+  });
+  return form;
 }
 
 module.exports = typeformUpdate;
