@@ -63,12 +63,12 @@ app.get('/integration-data', middleware.requireAuthentication, middleware.withIn
     .catch(catchRejection('Cant fetch integration data', res));
 });
 
-app.get('/mapping', (req, res) => {
-  db.mapping.findAll()
-    .then(r => res.json(r))
-    .catch(catchRejection('Cant fetch mappings', res));
-});
-
+// app.get('/mapping', (req, res) => {
+//   db.mapping.findAll()
+//     .then(r => res.json(r))
+//     .catch(catchRejection('Cant fetch mappings', res));
+// });
+//
 // app.get('/organizations', (req, res) => {
 //   db.organization.findAll()
 //   .then(organizations => {

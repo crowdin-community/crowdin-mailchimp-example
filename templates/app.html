@@ -167,7 +167,10 @@
       .then((res) => {
         manifest = res;
         document.title = res.name;
-        document.querySelector('.i_w h1').innerText = manifest.name;
+        let el = document.querySelector('.i_w h1');
+        if(!!el){
+          el.innerText = manifest.name;
+        }
       })
       .catch(e => {
         catchRejection(e, 'Can\'t fetch manifest.json');
@@ -395,7 +398,7 @@
   }
 
   function uploadFilesToIntegration(e) {
-    if(e.detail.length === 0) {
+    if(Object.keys(e.detail).length === 0) {
       document.querySelector('crowdin-toasts').pushToasts([`Select files that will be uploaded to ${manifest.name}`]);
       return;
     }

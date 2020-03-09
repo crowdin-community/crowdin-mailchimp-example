@@ -74,10 +74,12 @@ module.exports = function(sequelize, DataTypes) {
           return Promise.all(uploadedFiles.map(f => crowdinApi.sourceFilesApi.getFile(projectId, f.crowdinFileId).catch(e => ({}))))
         })
         .then(filesRes => {
-          files = filesRes.filter(fr => !!fr.data).map(({data}) => data).map(({directoryId, branchId, ...rest}) => ({
+          files = filesRes.filter(fr => !!fr.data).map(({data}) => data).map(({directoryId, branchId, name, title, ...rest}) => ({
             ...rest,
+            name: title || name,
+            title: title ? name : undefined,
             node_type: '1',
-            parent_id: 0 //directoryId || branchId || 0
+            parent_id: '0' //directoryId || branchId || 0
           }));
           resolve(files);
         })

@@ -1,6 +1,5 @@
 const {createClient} = require('@typeform/api-client');
 const crowdin = require('@crowdin/crowdin-api-client').default;
-const AdmZip = require('adm-zip');
 const axios = require('axios').default;
 
 const helper = require('./helpers');
@@ -60,7 +59,7 @@ function typeformUpdate() {
       })
       .then( responses => {
         filesById = responses.reduce((acc,fileData) => ({...acc, [`${fileData.data.id}`]: fileData.data}), {});
-        return Promise.all(Object.values(filesById).map(({title: formUID}) => typeformAPI.forms.get({uid: formUID})))
+        return Promise.all(Object.values(filesById).map(({name}) => typeformAPI.forms.get({uid: name.replace('.json','')})))
       })
       .then( responses => {
         fullFormsById = responses.reduce((acc, form) => ({...acc, [`${form.id}`]: form}), {});
@@ -72,7 +71,7 @@ function typeformUpdate() {
       .then( buffers => {
         const translatedFilesData = buffers.map(b => b.data);
         return Promise.all(translations.map((t, index) => {
-          const fileName = `${filesById[t.fileId].name.replace('.json','')}/${t.languageId}/crowdin-translate`;
+          const fileName = `${filesById[t.fileId].title}/${t.languageId}`;
           const integrationTranslationFile = integrationFilesList.find(f => f.title === fileName);
           if(integrationTranslationFile){
             return typeformAPI.forms.get({uid: integrationTranslationFile.id})
@@ -82,7 +81,7 @@ function typeformUpdate() {
                   return typeformAPI.forms.update({uid: formToUpdate.id, override: true, data: {...formToUpdate}});
               })
           } else {
-            let form = fullFormsById[filesById[t.fileId].title];
+            let form = fullFormsById[filesById[t.fileId].name.replace('.json','')];
             delete form.id;
 
             form.title = fileName;

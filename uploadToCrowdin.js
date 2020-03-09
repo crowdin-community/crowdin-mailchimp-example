@@ -23,13 +23,14 @@ function crowdinUpdate(db) {
       .then((values) => {
         integrationFiles = values;
         return Promise.all(
-          values.map(f => crowdinApi.uploadStorageApi.addStorage(`${f.title}.json`, JSON.stringify( getTranslatableStrings(f))))
+          values.map(f => crowdinApi.uploadStorageApi.addStorage(`${f.id}.json`, JSON.stringify( getTranslatableStrings(f))))
         )
       })
       .then(storageIds => {
         addedFiles = storageIds.map((f, i) =>
           ({
             ...f.data,
+            title: integrationFiles[i].title,
             integrationFileId: integrationFiles[i].id,
             integrationUpdatedAt: integrationFilesList[integrationFiles[i].id].last_updated_at
           })
@@ -39,18 +40,20 @@ function crowdinUpdate(db) {
           return db.mapping.findOne({where: {projectId: projectId, integrationFileId: f.integrationFileId}})
             .then(file => {
               if(!!file) {
-                return crowdinApi.sourceFilesApi.getFile(projectId, file.id)
+                return crowdinApi.sourceFilesApi.getFile(projectId, file.crowdinFileId)
                   .then(() => {
-                    return crowdinApi.sourceFilesApi.updateOrRestoreFile(projectId, file.id, {storageId: f.id})
+                    return crowdinApi.sourceFilesApi.updateOrRestoreFile(projectId, file.crowdinFileId, {storageId: f.id})
                   })
                   .then(response => {
                     return file.update({crowdinUpdatedAt: response.data.updatedAt, integrationUpdatedAt: f.integrationUpdatedAt})
                   })
                   .catch(() => {
+                    console.log(f);
+
                     return crowdinApi.sourceFilesApi.createFile(projectId, {
                       storageId: f.id,
                       name: f.fileName,
-                      title: f.integrationFileId
+                      title: f.title
                     })
                       .then(response => {
                         return file.update({
@@ -64,7 +67,7 @@ function crowdinUpdate(db) {
                 return crowdinApi.sourceFilesApi.createFile(projectId, {
                   storageId: f.id,
                   name: f.fileName,
-                  title: f.integrationFileId
+                  title: f.title
                 })
                   .then(response => {
                     return db.mapping.create({
