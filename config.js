@@ -2,7 +2,7 @@ var isDev = (process.env.NODE_ENV || 'development') !== 'production';
 
 const manifest = {
   "identifier": "type-form-app",
-  "name": "Typeform app",
+  "name": "Typeform",
   "baseUrl": isDev
     ? "http://172.21.21.60:8000/" // dev
     : "https://crowdin-typeform-app.herokuapp.com/",
@@ -24,7 +24,7 @@ const manifest = {
           {
               "key": "typeform_app_test",
               "name": "Typeform Integration",
-              "description": "Data sync between Typeform and Crowdin",
+              "description": "Translate your forms and surveys from Typeform to reach your audience in their native language",
               "logo": "/assets/logo.png",
               "url": "/"
           }

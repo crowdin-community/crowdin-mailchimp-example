@@ -192,7 +192,7 @@
                         <p>Contact your organization administrator to install it. More info on <a href='https://support.crowdin.com'>Link to how to install</a></p>`;
         } else if(!res.isLoggedIn) {
           document.querySelector('.i_w .center div').innerHTML =
-            `<crowdin-button primary onclick="integrationLogin()">Loggin with ${manifest.name}</crowdin-button>`;
+            `<crowdin-button primary onclick="integrationLogin()">Loggin with your ${manifest.name} account</crowdin-button>`;
         } else {
           let el = document.querySelector('.i_w');
           let template = document.getElementById('integration');
@@ -350,7 +350,7 @@
       .then(res => {
         let el = document.querySelector('.i_w');
         el.innerHTML =
-          `<div class='center'><div><crowdin-button primary onclick="integrationLogin()">Loggin with ${manifest.name}</crowdin-button></div></div>`;
+          `<div class='center'><div><crowdin-button primary onclick="integrationLogin()">Loggin with your ${manifest.name} account</crowdin-button></div></div>`;
         integrationLogin();  // immediately show login form again
       })
       .catch(e => {
