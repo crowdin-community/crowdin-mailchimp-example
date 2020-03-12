@@ -13,6 +13,7 @@
     "@crowdin/crowdin-api-client": "^1.5.6",
     "axios": "^0.19.2",
     "body-parser": "^1.19.0",
+    "cookie-session": "^1.4.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.15",
