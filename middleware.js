@@ -10,6 +10,10 @@ module.exports = (db) => {
       let origin = null;
       let clientId = null;
       let tokenJwt = null;
+      console.log('require auth user --------------------------->', req.user);
+      if(req.user){
+        next();
+      }
 
       if(req.session.crowdin){
         const crowdin = JSON.parse(req.session.crowdin);

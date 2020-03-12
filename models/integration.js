@@ -10,10 +10,10 @@ module.exports = function(sequelize, DataTypes) {
       unique: true,
     },
     integrationToken: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(10000),
     },
     integrationRefreshToken: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(10000),
     },
     integrationTokenExpiresIn: {
       type: DataTypes.STRING,

@@ -4,9 +4,10 @@
 <script>
   if(window.opener) {
     console.log('open opener and reload');
-    window.opener.postMessage('reload');
-    window.close();
+    // window.close();
   }
+    window.postMessage('reload');
+    window.location.replace('/');
 </script>
 </body>
 </html>

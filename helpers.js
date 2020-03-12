@@ -1,6 +1,6 @@
 const catchRejection = (message, res) => e => {
-  console.log(message);
-  console.log(e);
+  console.log('message ---------------------------------------->', message);
+  console.log('e ---------------------------------------------->', e);
   res.status(500).send(message);
 };
 

@@ -36,14 +36,14 @@ app.get('/manifest.json', (req, res) =>
 app.get('/status', middleware.requireAuthentication, (req, res) =>
   res.json({isInstalled: !!req.session.crowdin, isLoggedIn: !!req.user}));
 
-app.get('/integration-login', passport.authenticate('mailchimp'));
+app.get('/integration-login', passport.authenticate('mailchimp', {state: 'scuko'}));
 
 app.get('/integration-log-out', middleware.requireAuthentication, (req, res) => {
   req.logout();
   res.status(204).send();
 });
 
-app.get('/integration-token', passport.authenticate('mailchimp', { failureRedirect: '/integration-login' }),
+app.get('/integration-token', passport.authenticate('mailchimp', {failureRedirect: '/integration-login'}),
   (req, res) => res.sendFile(__dirname + '/templates/closeAuthModal.html'));
 
 app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegration, db.integration.getData());
@@ -59,7 +59,7 @@ app.get('/integration-data', middleware.requireAuthentication, middleware.withIn
 //   .then(organizations => {
 //     res.json(organizations);
 //   })
-//   .catch(catchRejection('Cnat fetch organizations', res));
+//   .catch(e => console.log(e));
 // });
 //
 // app.get('/integrations', (req, res) => {

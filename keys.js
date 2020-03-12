@@ -6,10 +6,10 @@ module.exports = {
     : "https://crowdin-mailchimp-app.herokuapp.com/",
   crowdinClientId: isDev
     ? "lXlJBL6NQetO3z7Jg1JW"  // dev
-    : "pKiA8X5ktxVPJDrxSX8F",
+    : "Tqr0DKSuss8pL4THsVlq",
   crowdinClientSecret: isDev
     ? "QEQE8ysDya4W1iDmXuBRVEzT4bQETPhTK9h4oEiu" // dev
-    : "AMi5vYVdXp7vg0Sa8Tm8mMe3DMAo8oiPkSi1oNtX",
+    : "fwkLrGIYpvEB32fse9Zgr3XCK2YW6nPF38mVQ5vO",
   integrationClientId: isDev
     ? "566339240479" // dev
     : "512947470701",
