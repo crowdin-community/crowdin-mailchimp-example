@@ -112,13 +112,11 @@ module.exports = function(sequelize, DataTypes) {
         if(!!client){
           return client.update(params);
         } else {
-          console.log('------------------------------------- > on create!!');
           return Organization.create(params);
         }
       })
       .then(organization => {
         if(!!organization){
-          console.log('organization ------------------------>', organization);
           res.status(204).send();
         } else {
           catchRejection('Cant install application', res)();

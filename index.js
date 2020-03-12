@@ -19,10 +19,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.use(cookieSession({
+  sameSite: 'none',
   maxAge: 24 * 60 * 60 * 1000,
   keys: [keys.integrationSecret]
 }));
-
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -36,7 +36,7 @@ app.get('/manifest.json', (req, res) =>
 app.get('/status', middleware.requireAuthentication, (req, res) =>
   res.json({isInstalled: !!req.session.crowdin, isLoggedIn: !!req.user}));
 
-app.get('/integration-login', passport.authenticate('mailchimp', {state: 'scuko'}));
+app.get('/integration-login', passport.authenticate('mailchimp'));
 
 app.get('/integration-log-out', middleware.requireAuthentication, (req, res) => {
   req.logout();
@@ -56,10 +56,10 @@ app.get('/integration-data', middleware.requireAuthentication, middleware.withIn
 //
 // app.get('/organizations', (req, res) => {
 //   db.organization.findAll()
-//   .then(organizations => {
-//     res.json(organizations);
-//   })
-//   .catch(e => console.log(e));
+//     .then(organizations => {
+//       res.json(organizations);
+//     })
+//     .catch(e => console.log(e));
 // });
 //
 // app.get('/integrations', (req, res) => {

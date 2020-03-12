@@ -19,7 +19,6 @@ var db = {};
 db.organization = sequelize.import(__dirname + '/models/organization.js');
 db.integration = sequelize.import(__dirname + '/models/integration.js');
 db.mapping = sequelize.import(__dirname + '/models/mapping.js');
-db.state = sequelize.import(__dirname + '/models/state.js');
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
