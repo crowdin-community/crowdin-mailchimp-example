@@ -27,15 +27,11 @@ module.exports = function(sequelize, DataTypes) {
     }
   });
 
-  Mapping.getFilesByDomainProjectId= function(res) {
-    return new Promise ((resolve, reject) => {
-      Mapping.findAll({where: {
-          domain: res.origin.domain,
-          projectId: res.origin.context.project_id,
-        }})
-        .then( reccords => resolve(reccords))
-        .catch(e => reject('Cant get data from mapping', e));
-    });
+  Mapping.getFilesByDomainProjectId = (res) => {
+    return Mapping.findAll({where: {
+      domain: res.origin.domain,
+      projectId: res.origin.context.project_id,
+    }})
   };
 
   return Mapping;

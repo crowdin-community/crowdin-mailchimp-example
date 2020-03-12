@@ -209,21 +209,10 @@
   isInstalled();
 
   function integrationLogin() {
-    checkOrigin()
-      .then(restParams => {
-        return fetch('/integration-login' + restParams);
-      })
-      .then((response) => {
-        return checkResponse(response);
-      })
-      .then((res) => {
-        var left = screen.width / 2 - 300;
-        var top = screen.height / 2 - 350;
-        var config = 'toolbar=no, menubar=no, width=600, height=700, top=' + top + ', left=' + left;
-        window.open(res.url, manifest.name, config);
-      }).catch(e => {
-      catchRejection(e, 'Can\'t fetch integration login url');
-    });
+    var left = screen.width / 2 - 300;
+    var top = screen.height / 2 - 350;
+    var config = 'toolbar=no, menubar=no, width=600, height=700, top=' + top + ', left=' + left;
+    window.open('/integration-login', manifest.name, config);
   }
 
   window.addEventListener('message', handleMessage);
@@ -372,7 +361,7 @@
       document.querySelector('crowdin-toasts').pushToasts(['Select files that will be downloaded to Crowdin']);
       return;
     }
-    const fileIds = event.detail.map(file => file.id);
+    const fileIds = event.detail; //.map(file => file.id);
     let el = document.querySelector('crowdin-simple-integration');
     el.setAttribute('is-to-crowdin-process', true);
     checkOrigin()

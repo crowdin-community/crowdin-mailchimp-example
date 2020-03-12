@@ -1,17 +1,12 @@
-var isDev = (process.env.NODE_ENV || 'development') !== 'production';
+const keys = require('./keys');
 
 const manifest = {
-  "identifier": "type-form-app",
-  "name": "Typeform",
-  "baseUrl": isDev
-    ? "http://172.21.21.60:8000/" // dev
-    : "https://crowdin-typeform-app.herokuapp.com/",
+  "identifier": "mailchimp-app",
+  "name": "Mailchimp",
+  "baseUrl": keys.baseUrl,
   "authentication": {
       "type": "authorization_code",
-      // crowdin client ID
-      "clientId": isDev
-        ? "trjBbjAue27tY7Hw0phH"  // dev
-        : "ikwEMWOH6b5gWiXo1Apv"
+      "clientId": keys.crowdinClientId,
   },
   "events": {
       "installed": "/installed"
@@ -22,8 +17,8 @@ const manifest = {
   "modules": {
       "integrations": [
           {
-              "key": "typeform_app_test",
-              "name": "Typeform Integration",
+              "key": "mailchimp_app_test",
+              "name": "Mailchimp Integration",
               "description": "Translate your forms and surveys from Typeform to reach your audience in their native language",
               "logo": "/assets/logo.png",
               "url": "/"
@@ -31,19 +26,11 @@ const manifest = {
       ]
   },
   // crowdin client secret
-  "clientSecret": isDev
-    ? "n3fsQOtG3D2fqPhBwkBq02A7HnsmUzaxHIWy9FpN" // dev
-    : "aD48fy1WV5agzZEdPcAv4QgJw1lWkJpDJh9PoNOY",
+  "clientSecret": keys.crowdinClientSecret,
 
-  "integrationClientId": isDev
-    ? "FzzC2UBbCjhNt9CYACYXvfo42P572xXhDkVoKKBkddtM" // dev
-    : "6WayTi4aBJTGotMbUBFA8BtYj49hDjjywZfN1UhUxTEJ",
-  "integrationSecret": isDev
-    ? "Ea3GVEYKJtJkQHzHXVJ5QueR2eeEaDXF1sbjG7TLZhbz" // dev
-    : "22fdPAnX93mdsMXyx7wSPDJsydFbPaBrq8H47ni7sdHi",
-  "callbackUrl": isDev
-    ? "http://172.21.21.60:8000/integration-token" // dev
-    : "https://crowdin-typeform-app.herokuapp.com/integration-token",
+  "integrationClientId": keys.integrationClientId,
+  "integrationSecret": keys.integrationSecret,
+  "callbackUrl": keys.callbackUrl,
 
   scope: [
     'forms:read',
