@@ -13,7 +13,7 @@ const nodeTypes = {
   BRANCH: '2',
 };
 
-const encryptData = (data) => crypto.AES.encrypt(data, keys.cryptoSecret);
+const encryptData = (data) => crypto.AES.encrypt(data, keys.cryptoSecret).toString();
 
 const decryptDsta = (encryptedData) => {
   const bytes = crypto.AES.decrypt(encryptedData, keys.cryptoSecret);
