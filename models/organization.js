@@ -2,9 +2,11 @@ const axios = require('axios');
 const crowdin = require('@crowdin/crowdin-api-client').default;
 
 const helper = require('../helpers');
-const config = require('./../config');
+const keys = require('./../keys');
 const catchRejection = helper.catchRejection;
 const nodeTypes = helper.nodeTypes;
+const encryptData = helper.encryptData;
+const decryptData = helper.decryptDsta;
 
 // Structure of organization table
 module.exports = function(sequelize, DataTypes) {
@@ -119,8 +121,8 @@ module.exports = function(sequelize, DataTypes) {
         client = organization;
         let payload = {
           grant_type: 'authorization_code',
-          client_id: config.authentication.clientId,
-          client_secret: config.clientSecret,
+          client_id: keys.crowdinClientId,
+          client_secret: keys.crowdinClientSecret,
           code: req.body.code,
         };
         // todo: do not forget change this line before production!!!
@@ -130,8 +132,8 @@ module.exports = function(sequelize, DataTypes) {
       .then(resp => {
         const params = {
           uid: req.body.domain,
-          accessToken: resp.data.access_token,
-          refreshToken: resp.data.refresh_token,
+          accessToken: encryptData(resp.data.access_token),
+          refreshToken: encryptData(resp.data.refresh_token),
           expire: new Date().getTime()/1000 + +resp.data.expires_in
         };
         // If we find organization update it records else create new one
@@ -164,7 +166,7 @@ module.exports = function(sequelize, DataTypes) {
           if(!isExpired) {
             // If token is valid we init crowdin api client with credentials and connect to response. Exit
             res.crowdinApiClient = new crowdin({
-              token: organization.accessToken,
+              token: decryptData(organization.accessToken),
               organization: organization.uid,
             });
             resolve();
@@ -172,16 +174,16 @@ module.exports = function(sequelize, DataTypes) {
             // If token expired prepare new request to get new valid token
             let payload = {
               grant_type: 'refresh_token',
-              client_id: config.authentication.clientId,
-              client_secret: config.clientSecret,
-              refresh_token: organization.refreshToken,
+              client_id: keys.crowdinClientId,
+              client_secret: keys.crowdinClientSecret,
+              refresh_token: decryptData(organization.refreshToken),
             };
             axios.post('https://accounts.crowdin.com/oauth/token', payload)
               .then(response => {
                 // extract new tokens from response, prepare object to update organization record in DB
                 let params = {
-                  refreshToken: response.data.refresh_token,
-                  accessToken: response.data.access_token,
+                  refreshToken: encryptData(response.data.refresh_token),
+                  accessToken: encryptData(response.data.access_token),
                   expire: (new Date().getTime() / 1000) + response.data.expires_in
                 };
                 // update record
@@ -190,7 +192,7 @@ module.exports = function(sequelize, DataTypes) {
               .then(organization => {
                 // Init Crowdin API client, connect to response and exit
                 res.crowdinApiClient = new crowdin({
-                  token: organization.accessToken,
+                  token: decryptData(organization.accessToken),
                   organization: organization.uid,
                 });
                 resolve();

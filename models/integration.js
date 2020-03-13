@@ -1,6 +1,7 @@
 var Mailchimp = require('mailchimp-api-v3');
 const helper = require('../helpers');
 const catchRejection = helper.catchRejection;
+const decryptData = helper.decryptDsta;
 const nodeTypes = helper.nodeTypes;
 
 // Database structure Integration table
@@ -31,7 +32,7 @@ module.exports = function(sequelize, DataTypes) {
         }
         // todo: manage refresh token actions
         // initialize Integration API client and connect it to response object
-        res.integrationClient = new Mailchimp(integration.integrationToken);
+        res.integrationClient = new Mailchimp(decryptData(integration.integrationToken));
         return new Promise (resolve => resolve());
       })
   };

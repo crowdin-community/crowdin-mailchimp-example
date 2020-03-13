@@ -25,24 +25,6 @@ const manifest = {
           }
       ]
   },
-  // crowdin client secret
-  "clientSecret": keys.crowdinClientSecret,
-
-  "integrationClientId": keys.integrationClientId,
-  "integrationSecret": keys.integrationSecret,
-  "callbackUrl": keys.callbackUrl,
-
-  scope: [
-    'forms:read',
-    'accounts:read',
-    'themes:read',
-    'responses:read',
-    'workspaces:read',
-    'forms:write',
-    'themes:write',
-    'responses:write',
-    'workspaces:write',
-  ].join('+')
 };
 
 module.exports = manifest;

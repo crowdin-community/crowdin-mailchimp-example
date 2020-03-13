@@ -1,5 +1,7 @@
 const passport = require('passport');
 const MailChimpStrategy = require('passport-mailchimp').Strategy;
+const helpers = require('./helpers');
+const encryptData = helpers.encryptData;
 const keys = require('./keys');
 const db = require('./db');
 
@@ -34,7 +36,7 @@ passport.use(
         // Prepare parameters to create or update integration credentials
         let params = {
           integrationTokenExpiresIn: '0',
-          integrationToken: `${accessToken}-${profile._json.dc}`,
+          integrationToken: encryptData(`${accessToken}-${profile._json.dc}`),
           integrationRefreshToken: '',
         };
         if(currentUser) {

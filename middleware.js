@@ -1,4 +1,4 @@
-var config = require('./config');
+const keys = require('./keys');
 const jwt = require('jsonwebtoken');
 const helper = require('./helpers');
 const catchRejection = helper.catchRejection;
@@ -24,11 +24,11 @@ module.exports = (db) => {
         tokenJwt = req.query['tokenJwt'];
       }
 
-      if(!origin || !clientId || !tokenJwt || clientId !== config.authentication.clientId) {
+      if(!origin || !clientId || !tokenJwt || clientId !== keys.crowdinClientId) {
         return res.status(401).send('No origin');
       }
 
-      jwt.verify(tokenJwt, config.clientSecret, (err, decoded) => {
+      jwt.verify(tokenJwt, keys.crowdinClientSecret, (err, decoded) => {
         if(err) {
           res.status(401).send('Cant verify');
         } else {

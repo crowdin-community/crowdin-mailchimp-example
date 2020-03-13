@@ -19,4 +19,5 @@ module.exports = {
   callbackUrl: isDev
     ? "http://172.21.21.60:7000/integration-token" // dev
     : "https://crowdin-mailchimp-app.herokuapp.com/integration-token",
+  cryptoSecret: '78a10623f59ea976456ac1b8e02ebde4b58f94',
 };

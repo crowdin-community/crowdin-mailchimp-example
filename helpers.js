@@ -1,3 +1,6 @@
+const crypto = require("crypto-js");
+const keys = require('./keys');
+
 const catchRejection = (message, res) => e => {
   console.log('message ---------------------------------------->', message);
   console.log('e ---------------------------------------------->', e);
@@ -10,4 +13,11 @@ const nodeTypes = {
   BRANCH: '2',
 };
 
-module.exports = {catchRejection, nodeTypes};
+const encryptData = (data) => crypto.AES.encrypt(data, keys.cryptoSecret);
+
+const decryptDsta = (encryptedData) => {
+  const bytes = crypto.AES.decrypt(encryptedData, keys.cryptoSecret);
+  return bytes.toString(crypto.enc.Utf8);
+};
+
+module.exports = {catchRejection, nodeTypes, encryptData, decryptDsta};
