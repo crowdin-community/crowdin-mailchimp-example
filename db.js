@@ -13,9 +13,9 @@ if(env === 'production'){
         'storage': __dirname + '/data/integration.sqlite',
     });
 }
-
+// Initialize DB object
 var db = {};
-
+// Connect models to DB object
 db.organization = sequelize.import(__dirname + '/models/organization.js');
 db.integration = sequelize.import(__dirname + '/models/integration.js');
 db.mapping = sequelize.import(__dirname + '/models/mapping.js');

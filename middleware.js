@@ -6,7 +6,8 @@ const catchRejection = helper.catchRejection;
 module.exports = (db) => {
   return {
     requireAuthentication: (req, res, next) => {
-
+      // check all credentials, extract some important data from request
+      // connect some useful data to response object for feature use
       let origin = null;
       let clientId = null;
       let tokenJwt = null;
@@ -40,12 +41,14 @@ module.exports = (db) => {
     },
 
     withIntegration: (req, res, next) => {
+      // Get integration credentials create Integration API client and connect to response
       db.integration.getApiClient(req, res)
         .then(() => next())
         .catch(catchRejection('Can\'t find integration by id', res))
     },
 
     withCrowdin: (req, res, next) => {
+      // Get organization credentials create Crowdin API client and connect to response
       db.organization.getOrganization(res)
         .then(() => next())
         .catch(catchRejection('Can\'t find organization by id', res));

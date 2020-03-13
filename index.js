@@ -48,6 +48,21 @@ app.get('/integration-token', passport.authenticate('mailchimp', {failureRedirec
 
 app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegration, db.integration.getData());
 
+app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectFiles(db));
+
+app.post('/installed', db.organization.install());
+
+app.post('/get-file-progress', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getFileProgress());
+
+app.get('/get-project-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectData());
+
+
+app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate(db));
+
+app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, integrationUpdate());
+
+// ------------------------------ start routes for debugging only ---------------------------
+
 // app.get('/mapping', (req, res) => {
 //   db.mapping.findAll()
 //     .then(r => res.json(r))
@@ -70,18 +85,7 @@ app.get('/integration-data', middleware.requireAuthentication, middleware.withIn
 //     .catch(catchRejection('Cant fetch integrations', res));
 // });
 
-app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectFiles(db));
-
-app.post('/installed', db.organization.install());
-
-app.post('/get-file-progress', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getFileProgress());
-
-app.get('/get-project-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectData());
-
-
-app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate(db));
-
-app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, integrationUpdate());
+// ------------------------------ end routes for debugging only ---------------------------
 
 db.sequelize.sync({force: false}).then(function() {
   app.listen(PORT, () => {

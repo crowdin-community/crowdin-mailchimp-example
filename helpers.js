@@ -4,4 +4,10 @@ const catchRejection = (message, res) => e => {
   res.status(500).send(message);
 };
 
-module.exports = {catchRejection};
+const nodeTypes = {
+  FOLDER: '0',
+  FILE: '1',
+  BRANCH: '2',
+};
+
+module.exports = {catchRejection, nodeTypes};

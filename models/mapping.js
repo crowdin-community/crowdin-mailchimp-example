@@ -1,4 +1,4 @@
-
+// Structure of mapping table
 module.exports = function(sequelize, DataTypes) {
   const Mapping = sequelize.define('mapping', {
     domain: {
@@ -27,6 +27,7 @@ module.exports = function(sequelize, DataTypes) {
     }
   });
 
+  // Get records of uploaded files from integration to Crowdin
   Mapping.getFilesByDomainProjectId = (res) => {
     return Mapping.findAll({where: {
       domain: res.origin.domain,

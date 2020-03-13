@@ -1,4 +1,4 @@
-var isDev = (process.env.NODE_ENV || 'development') !== 'production';
+const isDev = (process.env.NODE_ENV || 'development') !== 'production';
 
 module.exports = {
   baseUrl: isDev
