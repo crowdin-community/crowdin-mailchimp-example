@@ -30,9 +30,10 @@ module.exports = function(sequelize, DataTypes) {
           // if we don't find Integration, we can't create Integration API client. Exit
           return res.status(404).send();
         }
-        // todo: manage refresh token actions
+
         // initialize Integration API client and connect it to response object
         res.integrationClient = new Mailchimp(decryptData(integration.integrationToken));
+
         return new Promise (resolve => resolve());
       })
   };
@@ -49,13 +50,15 @@ module.exports = function(sequelize, DataTypes) {
      // 'templates': 'templates',
       'landing-pages': 'landing_pages'
     };
-    // Convert root elements to Folders, for feature use in integration web component
+
+    // Convert root elements to Folders, for future use in integration web component
     files.push(...Object.keys(roots).map(t => ({
       id: t,
       name: t,
       parent_id: 0,
       node_type: nodeTypes.FOLDER,
     })));
+
     // Get records for each root element
     Promise.all(Object.keys(roots).map(t =>
       mailChimpApi.get({path: `/${t}`, query: {count: 1000, offset: 0}})
@@ -63,11 +66,10 @@ module.exports = function(sequelize, DataTypes) {
       .then(responses => { // get responses for each root element
         responses.forEach((r, index) => { // Get records from each response
           files.push( // Push records as files to main files array
-            ...r[roots[Object.keys(roots)[index]]].map(f => ({  // Extract exact reccords array from full response object
+            ...r[roots[Object.keys(roots)[index]]].map(f => ({  // Extract exact records array from full response object
             ...f,
             node_type: nodeTypes.FILE,
             type: 'html', // we upload source file as HTML in this integration, type used for file icon on UI
-           // icon: 'https://us19.admin.mailchimp.com/images/campaigns/nav-icons/automation.svg',
             name: f.name || (f.settings || {}).title || f.id,
             parent_id: Object.keys(roots)[index], // Set file parent_id to roots folder used to group records
           })))

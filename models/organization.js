@@ -125,7 +125,7 @@ module.exports = function(sequelize, DataTypes) {
           client_secret: keys.crowdinClientSecret,
           code: req.body.code,
         };
-        // todo: do not forget change this line before production!!!
+
         // Try get code for authentication from Crowdin
         return axios.post(keys.crowdinAuthUrl, payload)
       })
