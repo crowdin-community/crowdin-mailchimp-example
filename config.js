@@ -19,7 +19,7 @@ const manifest = {
           {
               "key": "mailchimp_app_test",
               "name": "Mailchimp Integration",
-              "description": "Translate your forms and surveys from Typeform to reach your audience in their native language",
+              "description": "Upload and localize your marketing content from Mailchimp",
               "logo": "/assets/logo.png",
               "url": "/"
           }

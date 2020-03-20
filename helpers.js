@@ -15,9 +15,9 @@ const nodeTypes = {
 
 const encryptData = (data) => crypto.AES.encrypt(data, keys.cryptoSecret).toString();
 
-const decryptDsta = (encryptedData) => {
+const decryptData = (encryptedData) => {
   const bytes = crypto.AES.decrypt(encryptedData, keys.cryptoSecret);
   return bytes.toString(crypto.enc.Utf8);
 };
 
-module.exports = {catchRejection, nodeTypes, encryptData, decryptDsta};
+module.exports = {catchRejection, nodeTypes, encryptData, decryptData};

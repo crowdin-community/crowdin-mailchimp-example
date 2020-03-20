@@ -1,5 +1,5 @@
 const passport = require('passport');
-const MailChimpStrategy = require('passport-mailchimp').Strategy;
+const PassportStrategy = require('passport-mailchimp').Strategy;
 const helpers = require('./helpers');
 const encryptData = helpers.encryptData;
 const keys = require('./keys');
@@ -24,7 +24,7 @@ passport.deserializeUser((uid, done) => {
 
 passport.use(
   // Define passport strategy
-  new MailChimpStrategy({
+  new PassportStrategy({
     clientID: keys.integrationClientId,
     clientSecret: keys.integrationSecret,
     callbackURL: keys.callbackUrl
@@ -52,3 +52,9 @@ passport.use(
       .catch(e => done(e, null));
   })
 );
+
+auth = () => passport.authenticate('mailchimp');
+
+middleware = () => passport.authenticate('mailchimp', {failureRedirect: '/integration-login'});
+
+module.exports = {auth, middleware};

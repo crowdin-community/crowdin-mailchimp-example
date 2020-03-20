@@ -15,13 +15,14 @@ function crowdinUpdate(db) {
         integrationFiles = values.map(
           (f, index) => ({
             ...f,
+            content: f.archive_html || f.html,
             title: fileIds[index].name || (fileIds[index].settings || {}).name || fileIds[index].id,
             name: fileIds[index].id,
           })
         );
         // Upload all integration file content to Crowdin storage
         return Promise.all(
-          integrationFiles.map(f => crowdinApi.uploadStorageApi.addStorage(`${f.name}.html`, `${f.archive_html || f.html}`))
+          integrationFiles.map(f => crowdinApi.uploadStorageApi.addStorage(`${f.name}.html`, `${f.content}`))
         )
       })
       .then(storageIds => {

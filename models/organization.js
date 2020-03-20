@@ -6,7 +6,7 @@ const keys = require('./../keys');
 const catchRejection = helper.catchRejection;
 const nodeTypes = helper.nodeTypes;
 const encryptData = helper.encryptData;
-const decryptData = helper.decryptDsta;
+const decryptData = helper.decryptData;
 
 // Structure of organization table
 module.exports = function(sequelize, DataTypes) {

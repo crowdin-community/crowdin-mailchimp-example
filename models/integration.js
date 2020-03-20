@@ -1,7 +1,7 @@
 var Mailchimp = require('mailchimp-api-v3');
 const helper = require('../helpers');
 const catchRejection = helper.catchRejection;
-const decryptData = helper.decryptDsta;
+const decryptData = helper.decryptData;
 const nodeTypes = helper.nodeTypes;
 
 // Database structure Integration table

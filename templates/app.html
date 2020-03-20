@@ -67,7 +67,7 @@
   }
 
   function catchRejection(e, message = undefined) {
-    console.log(e);
+    console.log('err -------------->', e);
     showToast(message);
     let el = document.querySelector('.i_w .center');
     if(!!el) {
@@ -189,7 +189,7 @@
                         <p>Contact your organization administrator to install it. More info on <a href='https://support.crowdin.com'>Link to how to install</a></p>`;
         } else if(!res.isLoggedIn) {
           document.querySelector('.i_w .center div').innerHTML =
-            `<crowdin-button primary onclick="integrationLogin()">Loggin with your ${manifest.name} account</crowdin-button>`;
+            `<crowdin-button primary onclick="integrationLogin()">Log in with your ${manifest.name} account</crowdin-button>`;
         } else {
           let el = document.querySelector('.i_w');
           let template = document.getElementById('integration');
@@ -228,7 +228,7 @@
 
   function prepareComponent() {
     let el = document.querySelector('crowdin-simple-integration');
-    document.querySelector('.top').innerHTML = `<crowdin-button icon-before="account_circle" onclick="integrationLogOut()">Change account</crowdin-button>`;
+    document.querySelector('.top').innerHTML = `<crowdin-button icon-before="account_circle" onclick="integrationLogOut()">Log out</crowdin-button>`;
     el.setAttribute('integration-name', manifest.name);
     el.setAttribute('integration-logo', '/assets/logo.png');
     getIntegrationFiles();
