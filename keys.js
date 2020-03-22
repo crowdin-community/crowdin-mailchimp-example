@@ -1,4 +1,5 @@
 const isDev = (process.env.NODE_ENV || 'development') !== 'production';
+const useCopyAuth = true;
 
 module.exports = {
   baseUrl: isDev
@@ -20,4 +21,7 @@ module.exports = {
     ? "http://172.21.21.60:7000/integration-token" // dev
     : "https://crowdin-mailchimp-app.herokuapp.com/integration-token",
   cryptoSecret: '78a10623f59ea976456ac1b8e02ebde4b58f94',
+  crowdinAuthUrl : isDev && useCopyAuth
+    ? "http://accounts.yevhen.dev.crowdin.com/oauth/token" // Local copy auth service
+    : "https://accounts.crowdin.com/oauth/token"
 };

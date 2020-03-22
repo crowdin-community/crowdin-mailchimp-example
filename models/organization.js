@@ -127,7 +127,7 @@ module.exports = function(sequelize, DataTypes) {
         };
         // todo: do not forget change this line before production!!!
         // Try get code for authentication from Crowdin
-        return axios.post('https://accounts.crowdin.com/oauth/token', payload)
+        return axios.post(keys.crowdinAuthUrl, payload)
       })
       .then(resp => {
         const params = {
@@ -178,7 +178,7 @@ module.exports = function(sequelize, DataTypes) {
               client_secret: keys.crowdinClientSecret,
               refresh_token: decryptData(organization.refreshToken),
             };
-            axios.post('https://accounts.crowdin.com/oauth/token', payload)
+            axios.post(keys.crowdinAuthUrl, payload)
               .then(response => {
                 // extract new tokens from response, prepare object to update organization record in DB
                 let params = {

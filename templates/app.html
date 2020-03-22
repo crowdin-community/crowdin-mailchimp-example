@@ -373,7 +373,7 @@
         return checkResponse(response);
       })
       .then(res => {
-        showToast('Done');
+        showToast(fileIds.length === 1 ? 'File imported successfully' : 'Files imported successfully');
         el.setAttribute('is-to-crowdin-process', false);
         getCrowdinFiles();
       })
@@ -403,7 +403,7 @@
         return checkResponse(response);
       })
       .then(res => {
-        showToast('Done');
+        showToast(Object.keys(fileIds).length === 1 ? 'File imported successfully' : 'Files imported successfully');
         el.setAttribute('is-to-integration-process', false);
         getIntegrationFiles();
       })
