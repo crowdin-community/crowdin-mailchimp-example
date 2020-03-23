@@ -18,8 +18,10 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
+app.set('trust proxy', 1) // trust first proxy
+
 app.use(cookieSession({
-  sameSite: 'none',
+  sameSite: 'None',
   secure: true,
   maxAge: 24 * 60 * 60 * 1000,
   keys: [keys.integrationSecret]
