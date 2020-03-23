@@ -14,7 +14,7 @@ function integrationUpdate() {
       )]), []
     );
 
-    prepareData(filesTranslations, res)
+    prepareData(filesTranslations, translations, res)
       .then(preparedData => {
         // Do next for each selected translations
         return Promise.all(translations.map((t, index) => updateIntegrationFile({...preparedData, t, index, res})));
@@ -29,7 +29,7 @@ function integrationUpdate() {
 
 module.exports = integrationUpdate;
 
-const prepareData = (filesTranslations, res) => {
+const prepareData = (filesTranslations, translations, res) => {
   return new Promise ((resolve, reject) => {
     const integrationApiClient = res.integrationClient;
     const crowdinApi = res.crowdinApiClient;

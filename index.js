@@ -51,7 +51,7 @@ app.get('/integration-token', passportSetup.middleware(),
 
 app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegration, db.integration.getData());
 
-app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectFiles());
+app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectFiles(db));
 
 app.post('/installed', db.organization.install());
 
@@ -59,8 +59,7 @@ app.post('/get-file-progress', middleware.requireAuthentication, middleware.with
 
 app.get('/get-project-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectData());
 
-
-app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate());
+app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate(db));
 
 app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, integrationUpdate());
 
