@@ -1,46 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title></title>
-    <script src="https://pure-refuge-59195.herokuapp.com/dist/crowdin-web-components/crowdin-web-components.js"></script>
-    <style type='text/css'>
-        .i_w {
-            padding: 16px 24px;
-            max-width: 1420px;
-            margin: 0 auto;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title></title>
+  <script src="https://pure-refuge-59195.herokuapp.com/dist/crowdin-web-components/crowdin-web-components.js"></script>
+  <style type='text/css'>
+    .i_w {
+      padding: 16px 24px;
+      max-width: 1420px;
+      margin: 0 auto;
+    }
 
-        .center {
-            text-align: center;
-            min-height: calc(100vh - 64px);
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-        }
+    .center {
+      text-align: center;
+      min-height: calc(100vh - 64px);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+    }
 
-        .top {
-            text-align: right;
-            margin-bottom: 10px;
-        }
-    </style>
+    .top {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    .login {
+      margin-bottom: 10px;
+    }
+
+    .login img {
+      max-width: 70px;
+      max-height: 70px;
+      width: auto;
+      height: auto;
+    }
+
+    .login crowdin-h3 {
+      margin: 10px 0;
+    }
+  </style>
 </head>
 <body>
 <template id=integration>
-    <div class='top'>
+  <div class='top'>
+    <crowdin-button icon-before="account_circle" onclick="integrationLogOut()">Log out</crowdin-button>
+  </div>
+  <crowdin-simple-integration>
+  </crowdin-simple-integration>
+</template>
+<template id="login">
+  <div class="center">
+    <div>
+      <crowdin-card is-shadowed class="login">
+        <img alt='Integration logo' src='/assets/logo.png'/>
+        <crowdin-h3 id="integration-name">Integration name</crowdin-h3>
+        <crowdin-button
+            outlined
+            icon-after="arrow_forward"
+            onclick="integrationLogin()"
+        >
+          Loggin with your Integration account
+        </crowdin-button>
+      </crowdin-card>
+      <crowdin-a href="#" target="_blank">Learn more</crowdin-a>
     </div>
-    <crowdin-simple-integration>
-    </crowdin-simple-integration>
+  </div>
 </template>
 <div class='i_w'>
-    <div class="center">
-        <div>
-            <h1></h1>
-            <crowdin-progress-indicator></crowdin-progress-indicator>
-        </div>
+  <div class="center">
+    <div>
+      <h1></h1>
+      <crowdin-progress-indicator></crowdin-progress-indicator>
     </div>
+  </div>
 </div>
 <crowdin-toasts></crowdin-toasts>
 <script type=text/javascript>
@@ -112,7 +146,7 @@
   }
 
   function parentWindowPostMessage(data) {
-    return new Promise ( (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       window.parent.postMessage(
         JSON.stringify(data),
         origin
@@ -165,7 +199,7 @@
         manifest = res;
         document.title = res.name;
         let el = document.querySelector('.i_w h1');
-        if(!!el){
+        if(!!el) {
           el.innerText = manifest.name;
         }
       })
@@ -173,6 +207,14 @@
         catchRejection(e, 'Can\'t fetch manifest.json');
       });
   })();
+
+  function getLoginTemplate() {
+    let login = document.querySelector('#login').content.cloneNode(true);
+    document.querySelector('.i_w').innerHTML = '';
+    login.querySelector('crowdin-h3').innerHTML = manifest.name;
+    login.querySelector('crowdin-button').innerHTML = `Login with your ${manifest.name} account`;
+    document.querySelector('.i_w').appendChild(login);
+  }
 
   function isInstalled() {
     checkOrigin()
@@ -188,8 +230,7 @@
             `<h1>Looks like ${manifest.name} is not installed yet!</h1>
                         <p>Contact your organization administrator to install it. More info on <a href='https://support.crowdin.com'>Link to how to install</a></p>`;
         } else if(!res.isLoggedIn) {
-          document.querySelector('.i_w .center div').innerHTML =
-            `<crowdin-button primary onclick="integrationLogin()">Log in with your ${manifest.name} account</crowdin-button>`;
+          getLoginTemplate();
         } else {
           let el = document.querySelector('.i_w');
           let template = document.getElementById('integration');
@@ -219,7 +260,7 @@
       isInstalled();
     } else {
       let eventData = JSON.parse(event.data);
-      if (postPromises[eventData.uid]) {
+      if(postPromises[eventData.uid]) {
         clearTimeout(postPromises[eventData.uid].timer);
         postPromises[eventData.uid].resolve(eventData.data);
       }
@@ -228,7 +269,6 @@
 
   function prepareComponent() {
     let el = document.querySelector('crowdin-simple-integration');
-    document.querySelector('.top').innerHTML = `<crowdin-button icon-before="account_circle" onclick="integrationLogOut()">Log out</crowdin-button>`;
     el.setAttribute('integration-name', manifest.name);
     el.setAttribute('integration-logo', '/assets/logo.png');
     getIntegrationFiles();
@@ -296,7 +336,7 @@
       });
   }
 
-  function crowdinFilesFolderToggled (event) {
+  function crowdinFilesFolderToggled(event) {
     if(event.detail.componentId === 'crowdin-files' && event.detail.isOpen) {
       getFileProgress(event.detail.id);
     }
@@ -334,9 +374,7 @@
         return checkResponse(response);
       })
       .then(res => {
-        let el = document.querySelector('.i_w');
-        el.innerHTML =
-          `<div class='center'><div><crowdin-button primary onclick="integrationLogin()">Loggin with your ${manifest.name} account</crowdin-button></div></div>`;
+        getLoginTemplate();
         integrationLogin();  // immediately show login form again
       })
       .catch(e => {
@@ -345,10 +383,10 @@
       })
   }
 
-  function refreshFilesList (e) {
-    if(e.detail.refreshIntegration){
+  function refreshFilesList(e) {
+    if(e.detail.refreshIntegration) {
       getIntegrationFiles();
-    } else if (e.detail.refreshCrowdin){
+    } else if(e.detail.refreshCrowdin) {
       getCrowdinFiles();
     }
   }
@@ -412,6 +450,7 @@
         catchRejection(e, 'Can\'t upload files to integration');
       });
   }
+
   document.body.addEventListener('refreshFilesList', refreshFilesList);
   document.body.addEventListener('uploadFilesToCrowdin', uploadFilesToCrowdin);
   document.body.addEventListener('uploadFilesToIntegration', uploadFilesToIntegration);
