@@ -51,7 +51,7 @@ app.get('/integration-token', passportSetup.middleware(),
 
 app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegration, db.integration.getData());
 
-app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectFiles(db));
+app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectFiles());
 
 app.post('/installed', db.organization.install());
 
@@ -60,34 +60,34 @@ app.post('/get-file-progress', middleware.requireAuthentication, middleware.with
 app.get('/get-project-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectData());
 
 
-app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate(db));
+app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate());
 
 app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, integrationUpdate());
 
 // ------------------------------ start routes for debugging only ---------------------------
+if(process.env.NODE_ENV !== 'production') {
+  app.get('/mapping', (req, res) => {
+    db.mapping.findAll()
+      .then(r => res.json(r))
+      .catch(e => console.log(e));
+  });
 
-// app.get('/mapping', (req, res) => {
-//   db.mapping.findAll()
-//     .then(r => res.json(r))
-//     .catch(catchRejection('Cant fetch mappings', res));
-// });
-//
-// app.get('/organizations', (req, res) => {
-//   db.organization.findAll()
-//     .then(organizations => {
-//       res.json(organizations);
-//     })
-//     .catch(e => console.log(e));
-// });
-//
-// app.get('/integrations', (req, res) => {
-//   db.integration.findAll()
-//     .then(integrations => {
-//       res.json(integrations);
-//     })
-//     .catch(catchRejection('Cant fetch integrations', res));
-// });
+  app.get('/organizations', (req, res) => {
+    db.organization.findAll()
+      .then(organizations => {
+        res.json(organizations);
+      })
+      .catch(e => console.log(e));
+  });
 
+  app.get('/integrations', (req, res) => {
+    db.integration.findAll()
+      .then(integrations => {
+        res.json(integrations);
+      })
+      .catch(e => console.log(e));
+  });
+}
 // ------------------------------ end routes for debugging only ---------------------------
 
 db.sequelize.sync({force: false}).then(function() {

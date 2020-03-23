@@ -2,8 +2,9 @@ const crypto = require("crypto-js");
 const keys = require('./keys');
 
 const catchRejection = (message, res) => e => {
-  console.log('message ---------------------------------------->', message);
-  console.log('e ---------------------------------------------->', e);
+  // here the right place to console.log what goes wrong
+  // console.log('message ---------------------------------------->', message);
+  // console.log('e ---------------------------------------------->', e);
   res.status(500).send(message);
 };
 

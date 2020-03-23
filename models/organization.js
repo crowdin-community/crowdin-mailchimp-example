@@ -7,6 +7,7 @@ const catchRejection = helper.catchRejection;
 const nodeTypes = helper.nodeTypes;
 const encryptData = helper.encryptData;
 const decryptData = helper.decryptData;
+const db = require('./db');
 
 // Structure of organization table
 module.exports = function(sequelize, DataTypes) {
@@ -63,7 +64,7 @@ module.exports = function(sequelize, DataTypes) {
       .catch(catchRejection('Cant fetch progress for file', res));
   };
 
-  Organization.getProjectFiles = (db) => (req, res) => {
+  Organization.getProjectFiles = () => (req, res) => {
     let files = [];
     const projectId = res.origin.context.project_id;
 // -------------------- Start get files with mapping ---------------------------------

@@ -1,4 +1,4 @@
-var Mailchimp = require('mailchimp-api-v3');
+const Mailchimp = require('mailchimp-api-v3');
 const helper = require('../helpers');
 const catchRejection = helper.catchRejection;
 const decryptData = helper.decryptData;

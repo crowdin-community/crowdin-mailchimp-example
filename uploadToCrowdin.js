@@ -1,5 +1,6 @@
+const db = require('./db');
 
-function crowdinUpdate(db) {
+function crowdinUpdate() {
   return (req, res) => {
     const mailChimpApi = res.integrationClient;
     const crowdinApi = res.crowdinApiClient;

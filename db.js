@@ -1,6 +1,6 @@
-var Sequelize = require('sequelize');
-var env = process.env.NODE_ENV || 'development';
-var sequelize;
+const Sequelize = require('sequelize');
+const env = process.env.NODE_ENV || 'development';
+let sequelize;
 
 if(env === 'production'){
     sequelize = new Sequelize(process.env.DATABASE_URL, {
@@ -14,7 +14,7 @@ if(env === 'production'){
     });
 }
 // Initialize DB object
-var db = {};
+const db = {};
 // Connect models to DB object
 db.organization = sequelize.import(__dirname + '/models/organization.js');
 db.integration = sequelize.import(__dirname + '/models/integration.js');
