@@ -45,10 +45,7 @@ module.exports = function(sequelize, DataTypes) {
 
     // Define root elements for integration
     let roots = {
-     // 'lists': 'lists',
       'campaigns': 'campaigns',
-     // 'templates': 'templates',
-      'landing-pages': 'landing_pages'
     };
 
     // Convert root elements to Folders, for future use in integration web component
