@@ -1,5 +1,6 @@
+const Mapping = require('./models/mapping');
 
-function crowdinUpdate(db) {
+function crowdinUpdate() {
   return (req, res) => {
     const mailChimpApi = res.integrationClient;
     const crowdinApi = res.crowdinApiClient;
@@ -39,7 +40,7 @@ function crowdinUpdate(db) {
         // for each added file do next
         return Promise.all(addedFiles.map(f => {
           // Try find file on mapping table
-          return db.mapping.findOne({where: {projectId: projectId, integrationFileId: f.integrationFileId}})
+          return Mapping.findOne({where: {projectId: projectId, integrationFileId: f.integrationFileId}})
             .then(file => {
               if(!!file) {
                 // Find file try get it
@@ -77,7 +78,7 @@ function crowdinUpdate(db) {
                 })
                   .then(response => {
                     // Create new record on mapping table
-                    return db.mapping.create({
+                    return Mapping.create({
                       domain: res.origin.domain,
                       projectId: projectId,
                       integrationUpdatedAt: f.integrationUpdatedAt,

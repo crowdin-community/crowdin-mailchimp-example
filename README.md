@@ -128,7 +128,7 @@ For more about Node.js Apps on Heroku read "[Getting Started on Heroku with Node
 | uploadToIntegration.js             | Code to upload translations to external service
 | passportSetup.js                   | Configuration file for authentication on the external service side
 | config.js                          | App Configuration file
-| db.js                              | Database configuration file
+| db_connect.js                              | Database configuration file
 | middleware.js                      | Routes validation, checking and providing some important data
 | index.js                           | Application backend routes configuration file
 | helpers.js                         | Small helper things
@@ -159,7 +159,7 @@ App configuration located in *config.js* file. Each field with possible values d
 
 Database is used to store Crowdin, Mailchimp OAuth tokens (for executing API requests) and Crowdin files to Mailchimp files mapping. By default, Postgres is used for production and Sqlite for local environment.
 
-If you want to use another DB, feel free to change it in *db.js* file. For more about all possible databases read [Sequelize](https://sequelize.org/) docs.
+If you want to use another DB, feel free to change it in *db_connect.js* file. For more about all possible databases read [Sequelize](https://sequelize.org/) docs.
 
 #### Authorization
 

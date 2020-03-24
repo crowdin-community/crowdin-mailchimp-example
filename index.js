@@ -1,17 +1,21 @@
 const _ = require('underscore');
 const express = require('express');
-const bodyParser = require('body-parser');
 const passport = require('passport');
+const bodyParser = require('body-parser');
+const cookieSession = require('cookie-session');
 
-const db = require('./db');
 const keys = require('./keys');
+const db = require('./db_connect');
 const config = require('./config');
 const PORT = process.env.PORT || 7000;
-const middleware = require('./middleware.js')(db);
+const middleware = require('./middleware.js');
 const passportSetup = require('./passportSetup');
 const crowdinUpdate = require('./uploadToCrowdin');
 const integrationUpdate = require('./uploadToIntegration');
-const cookieSession = require('cookie-session');
+
+const Mapping = require('./models/mapping');
+const Integration = require('./models/integration');
+const Organization = require('./models/organization');
 
 const app = express();
 
@@ -49,30 +53,30 @@ app.get('/integration-log-out', middleware.requireAuthentication, (req, res) => 
 app.get('/integration-token', passportSetup.middleware(),
   (req, res) => res.sendFile(__dirname + '/templates/closeAuthModal.html'));
 
-app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegration, db.integration.getData());
+app.get('/integration-data', middleware.requireAuthentication, middleware.withIntegration, Integration.getData());
 
-app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectFiles(db));
+app.get('/crowdin-data', middleware.requireAuthentication, middleware.withCrowdin, Organization.getProjectFiles());
 
-app.post('/installed', db.organization.install());
+app.post('/installed', Organization.install());
 
-app.post('/get-file-progress', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getFileProgress());
+app.post('/get-file-progress', middleware.requireAuthentication, middleware.withCrowdin, Organization.getFileProgress());
 
-app.get('/get-project-data', middleware.requireAuthentication, middleware.withCrowdin, db.organization.getProjectData());
+app.get('/get-project-data', middleware.requireAuthentication, middleware.withCrowdin, Organization.getProjectData());
 
-app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate(db));
+app.post('/upload-to-crowdin', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, crowdinUpdate());
 
 app.post('/upload-to-integration', middleware.requireAuthentication, middleware.withIntegration, middleware.withCrowdin, integrationUpdate());
 
 // ------------------------------ start routes for debugging only ---------------------------
 if(process.env.NODE_ENV !== 'production') {
   app.get('/mapping', (req, res) => {
-    db.mapping.findAll()
+    Mapping.findAll()
       .then(r => res.json(r))
       .catch(e => console.log(e));
   });
 
   app.get('/organizations', (req, res) => {
-    db.organization.findAll()
+    Organization.findAll()
       .then(organizations => {
         res.json(organizations);
       })
@@ -80,7 +84,7 @@ if(process.env.NODE_ENV !== 'production') {
   });
 
   app.get('/integrations', (req, res) => {
-    db.integration.findAll()
+    Integration.findAll()
       .then(integrations => {
         res.json(integrations);
       })
@@ -89,7 +93,7 @@ if(process.env.NODE_ENV !== 'production') {
 }
 // ------------------------------ end routes for debugging only ---------------------------
 
-db.sequelize.sync({force: false}).then(function() {
+db.sync({force: false}).then(function() {
   app.listen(PORT, () => {
     console.log(`Crowdin apps listening on ${PORT}! Good luck!!!`);
   });

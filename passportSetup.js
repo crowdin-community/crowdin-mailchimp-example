@@ -1,9 +1,11 @@
 const passport = require('passport');
 const PassportStrategy = require('passport-mailchimp').Strategy;
-const helpers = require('./helpers');
-const encryptData = helpers.encryptData;
+
 const keys = require('./keys');
-const db = require('./db');
+const helpers = require('./helpers');
+const Integration = require('./models/integration');
+
+const encryptData = helpers.encryptData;
 
 passport.serializeUser((user, done) => {
   // Create user session and set cookies
@@ -12,7 +14,7 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser((uid, done) => {
   // get user cookies and find Integration to provide credentials
-  db.integration.findOne({where: {uid: uid}})
+  Integration.findOne({where: {uid: uid}})
     .then((integration) => {
       if(integration && integration.hasOwnProperty('toJSON')){
         integration = integration.toJSON();
@@ -31,7 +33,7 @@ passport.use(
   }, (accessToken, refreshToken, profile, done) => {
     // Callback function after user success authentication on integration
     // Try find record with current user
-    db.integration.findOne({where: {uid: `${profile._json.user_id}`}})
+    Integration.findOne({where: {uid: `${profile._json.user_id}`}})
       .then(currentUser => {
         // Prepare parameters to create or update integration credentials
         let params = {
@@ -45,7 +47,7 @@ passport.use(
         } else {
           // Create new user with current credentials
           params.uid = profile._json.user_id;
-          return db.integration.create(params);
+          return Integration.create(params);
         }
       })
       .then(user => done(null, user))
