@@ -153,7 +153,7 @@ module.exports = function(sequelize, DataTypes) {
       .catch(catchRejection('Cant install application', res));
   };
 
-  Organization.getOrganization = function(res) {
+  Organization.getOrganization = (res) => {
     return new Promise ( (resolve, reject) => {
       // Try find organization with response domain value
       Organization.findOne({where: {uid: res.origin.domain}})
