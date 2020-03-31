@@ -1,22 +1,16 @@
 const isDev = (process.env.NODE_ENV || 'development') !== 'production';
 
+const baseUrl = isDev
+  ? "https://<your_ngrok_tunnel>.ngrok.io"
+  : "https://<app_name>.herokuapp.com";
+
 module.exports = {
-  baseUrl: isDev
-    ? "http://172.21.21.60:7000/" // dev  // localhost will not work use ngrok instead
-    : "https://crowdin-typeform-app.herokuapp.com/",
-  crowdinClientId: isDev
-    ? "clientIdFromCrowdin"  // dev
-    : "clientIdFromCrowdin",
-  crowdinClientSecret: isDev
-    ? "clientSecretFromCrowdin" // dev
-    : "clientSecterFromCrowdin",
-  integrationClientId: isDev
-    ? "IntegrationClientId" // dev
-    : "IntegrationClientId",
-  integrationSecret: isDev
-    ? "IntegrationClientSecret" // dev
-    : "IntegrationClientSecret",
-  callbackUrl: isDev
-    ? "http://172.21.21.60:7000/integration-token" // dev
-    : "https://crowdin-typeform-app.herokuapp.com/integration-token",
+  baseUrl: baseUrl,
+  crowdinClientId: process.env.CROWDIN_CLIENT_ID || "crowdinClientId",
+  crowdinClientSecret: process.env.CROWDIN_CLIENT_SECRET || "crowdinClientSecret",
+  integrationClientId: process.env.INTEGRATION_CLIENT_ID || "IntegrationClientId",
+  integrationSecret: process.env.INTEGRATION_CLIENT_SECRET || "IntegrationClientSecret",
+  callbackUrl: baseUrl + "/integration-token",
+  cryptoSecret: process.env.CRYPTO_SECRET || 'UniqueCryptoSecret',
+  crowdinAuthUrl : "https://accounts.crowdin.com/oauth/token"
 };

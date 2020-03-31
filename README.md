@@ -49,9 +49,31 @@ git clone https://github.com/crowdin-community/crowdin-mailchimp-example.git
    npm install
    ```
 
-2. Start Node server (default port is 7000)
+2. Create `keys.js` file:
 
-    Run the command below in the App directory:
+    ```console
+    cp keys.sample.js keys.js
+    ```
+
+3. Open `keys.js` file and fill in the following credentials:
+
+    | Variable                  | Description |
+    |---------------------------|-------------|
+    | `crowdinClientId`<br>`crowdinClientSecret`| [Crowdin OAuth](https://support.crowdin.com/enterprise/creating-oauth-app/) Client ID and Client Secret
+    | `IntegrationClientId`<br>`IntegrationClientSecret`| [Mailchimp OAuth](https://mailchimp.com/developer/guides/how-to-use-oauth2/) Client ID and Client Secret
+    | `UniqueCryptoSecret` | Unique random string. Will be used to encrypt data in DB
+
+4. Start Node server (default port is 7000):
+
+    - Use [ngrok](https://ngrok.com/) to make your server public:
+
+    ```console
+    ngrok http 7000
+    ```
+
+    - Open `keys.js` file and fill in `<your_ngrok_tunnel>`
+
+    - Run the command below in the App directory:
 
     ```console
     node index.js
@@ -70,12 +92,6 @@ git clone https://github.com/crowdin-community/crowdin-mailchimp-example.git
     nodemon --watch crowdin-mailchimp-example crowdin-mailchimp-example/index.js
     ```
 
-   - Use [ngrok](https://ngrok.com/) to make your server public:
-
-    ```console
-    ngrok http 7000
-    ```
-
 #### Heroku
 - [Install Heroku CLI and Log In](https://devcenter.heroku.com/articles/getting-started-with-nodejs#set-up)
 
@@ -84,6 +100,14 @@ git clone https://github.com/crowdin-community/crowdin-mailchimp-example.git
 ```console
 cd crowdin-mailchimp-example
 ```
+
+- Create `keys.js` file:
+
+```console
+cp keys.sample.js keys.js
+```
+
+- Open `keys.js` file and fill in you `<app_name>`
 
 - Create Heroku App:
 
@@ -96,6 +120,16 @@ heroku create <app_name>
 ```console
 heroku addons:create heroku-postgresql:hobby-dev
 ```
+
+- Navigate to your App settings and define the following Config Vars:
+
+| Variable                    | Description                                                                           |
+|--------------------------------------------------------|---------------------------------------------------------------------------------------|
+| `CROWDIN_CLIENT_ID`<br>`CROWDIN_CLIENT_SECRET`         | [Crowdin OAuth](https://support.crowdin.com/enterprise/creating-oauth-app/) Client ID and Client Secret
+| `INTEGRATION_CLIENT_ID`<br>`INTEGRATION_CLIENT_SECRET` | [Mailchimp OAuth](https://mailchimp.com/developer/guides/how-to-use-oauth2/) Client ID and Client Secret
+| `CRYPTO_SECRET`                                        | Unique random string. Will be used to encrypt data in DB
+
+Also you can fill in appropriate variables in `keys.js` file instead of defining environment variables.
 
 - Deploy your code:
 
@@ -128,7 +162,7 @@ For more about Node.js Apps on Heroku read "[Getting Started on Heroku with Node
 | uploadToIntegration.js             | Code to upload translations to external service
 | passportSetup.js                   | Configuration file for authentication on the external service side
 | config.js                          | App Configuration file
-| db_connect.js                              | Database configuration file
+| db_connect.js                      | Database configuration file
 | middleware.js                      | Routes validation, checking and providing some important data
 | index.js                           | Application backend routes configuration file
 | helpers.js                         | Small helper things
