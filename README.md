@@ -154,8 +154,8 @@ For more about Node.js Apps on Heroku read "[Getting Started on Heroku with Node
 | Name                               | Description                                                                 |
 |------------------------------------|-----------------------------------------------------------------------------|
 | assets/logo.png                    | App logo
-| models/integration.js              | Logic to work with external service (configuring OAuth links, tokens, content management)
-| models/organization.js             | Logic to work with Crowdin (authorization, files list, translation progress)
+| models/integration.js              | Code to work with external service (configuring OAuth links, tokens, content management)
+| models/organization.js             | Code to work with Crowdin (authorization, files list, translation progress)
 | templates/app.html                 | Small front application that configured to work with current backend
 | templates/closeAuthModal.html      | Helper file to close integration authModal and reload the page
 | uploadToCrowdin.js                 | Code to upload files for localization to Crowdin
