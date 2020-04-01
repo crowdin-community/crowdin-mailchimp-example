@@ -23,7 +23,7 @@
     "passport-mailchimp": "^1.1.0",
     "pg": "^7.18.1",
     "pg-hstore": "^2.3.3",
-    "sqlite": "^3.0.3",
+    "sqlite": "^3.0.6",
     "sequelize": "^5.21.4",
     "underscore": "^1.9.2"
   }
