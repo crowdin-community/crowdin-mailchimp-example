@@ -1,4 +1,4 @@
-const _ = require('underscore');
+const _ = require('lodash');
 const express = require('express');
 const passport = require('passport');
 const bodyParser = require('body-parser');
@@ -33,7 +33,9 @@ app.use(cookieSession({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get('/assets/logo.png', (req, res) => res.sendFile(__dirname + '/assets/logo.png'));
+app.use(express.static('polyfills'));
+
+app.get('/assets/logo.svg', (req, res) => res.sendFile(__dirname + '/assets/logo.svg'));
 
 app.get('/', middleware.requireAuthentication, (req, res) => res.sendFile(__dirname + '/templates/app.html'));
 

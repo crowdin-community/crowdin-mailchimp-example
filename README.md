@@ -153,7 +153,7 @@ For more about Node.js Apps on Heroku read "[Getting Started on Heroku with Node
 
 | Name                               | Description                                                                 |
 |------------------------------------|-----------------------------------------------------------------------------|
-| assets/logo.png                    | App logo
+| assets/logo.svg                    | App logo
 | models/integration.js              | Code to work with external service (configuring OAuth links, tokens, content management)
 | models/organization.js             | Code to work with Crowdin (authorization, files list, translation progress)
 | templates/app.html                 | Small front application that configured to work with current backend
@@ -172,7 +172,7 @@ This example is created for the purpose to show how easy to create Crowdin App a
 
 #### App logo
 
-Change *assets/logo.png* to your own. Recommended dimensions are 50x50px. File name cannot be modified.
+Change *assets/logo.svg* to your own. Recommended dimensions are 50x50px. File name cannot be modified.
 
 #### Configuration
 
