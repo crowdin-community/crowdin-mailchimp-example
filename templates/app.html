@@ -6,6 +6,8 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title></title>
   <script src="https://pure-refuge-59195.herokuapp.com/dist/crowdin-web-components/crowdin-web-components.js"></script>
+  <script src="/polyfills/promise.js"></script>
+  <script src="/polyfills/fetch.js.js"></script>
   <style type='text/css'>
     .i_w {
       padding: 16px 24px;
@@ -37,8 +39,8 @@
       height: auto;
     }
 
-    .login crowdin-h3 {
-      margin: 10px 0;
+    .login crowdin-h4 {
+      margin: 8px 0 16px;
     }
   </style>
 </head>
@@ -53,15 +55,15 @@
 <template id="login">
   <div class="center">
     <div>
-      <crowdin-card is-shadowed class="login">
-        <img alt='Integration logo' src='/assets/logo.png'/>
-        <crowdin-h3 id="integration-name">Integration name</crowdin-h3>
+      <crowdin-card is-shadowed is-padding-lg class="login">
+        <img alt='Integration logo' src='/assets/logo.svg'/>
+        <crowdin-h4 id="integration-name">Integration name</crowdin-h4>
         <crowdin-button
             outlined
             icon-after="arrow_forward"
             onclick="integrationLogin()"
         >
-          Loggin with your Integration account
+          Log In To Integration
         </crowdin-button>
       </crowdin-card>
       <!--<crowdin-a href="#" target="_blank">Learn more</crowdin-a>-->
@@ -78,6 +80,11 @@
 </div>
 <crowdin-toasts></crowdin-toasts>
 <script type=text/javascript>
+
+  if (!window.Promise) {
+    window.Promise = Promise;
+  }
+
   let manifest = {};
   let urlParams = new URLSearchParams(window.location.search);
   let origin = urlParams.get('origin');
@@ -212,8 +219,8 @@
   function getLoginTemplate() {
     let login = document.querySelector('#login').content.cloneNode(true);
     document.querySelector('.i_w').innerHTML = '';
-    login.querySelector('crowdin-h3').innerHTML = manifest.name;
-    login.querySelector('crowdin-button').innerHTML = `Login with your ${manifest.name} account`;
+    login.querySelector('crowdin-h4').innerHTML = manifest.name;
+    login.querySelector('crowdin-button').innerHTML = `LOG IN WITH ${manifest.name}`;
     document.querySelector('.i_w').appendChild(login);
   }
 
@@ -271,7 +278,7 @@
   function prepareComponent() {
     let el = document.querySelector('crowdin-simple-integration');
     el.setAttribute('integration-name', manifest.name);
-    el.setAttribute('integration-logo', '/assets/logo.png');
+    el.setAttribute('integration-logo', '/assets/logo.svg');
     getIntegrationFiles();
     getCrowdinFiles();
   }
