@@ -7,7 +7,7 @@
   <title></title>
   <script src="https://pure-refuge-59195.herokuapp.com/dist/crowdin-web-components/crowdin-web-components.js"></script>
   <script src="/polyfills/promise.js"></script>
-  <script src="/polyfills/fetch.js.js"></script>
+  <script src="/polyfills/fetch.js"></script>
   <style type='text/css'>
     .i_w {
       padding: 16px 24px;
@@ -209,6 +209,7 @@
         if(!!el) {
           el.innerText = manifest.name;
         }
+        isInstalled();
       })
       .catch(e => {
         catchRejection(e, 'Can\'t fetch manifest.json');
@@ -249,8 +250,6 @@
       catchRejection(e, 'Can\'t check instalation status');
     });
   }
-
-  isInstalled();
 
   function integrationLogin() {
     const left = screen.width / 2 - 300;
