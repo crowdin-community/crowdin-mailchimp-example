@@ -1,7 +1,6 @@
 const axios = require('axios').default;
 
-const helper = require('./helpers');
-const catchRejection = helper.catchRejection;
+const { catchRejection } = require('./helpers');
 
 function integrationUpdate() {
   return (req, res) => {

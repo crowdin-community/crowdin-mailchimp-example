@@ -1,11 +1,9 @@
 const keys = require('./keys');
 const jwt = require('jsonwebtoken');
 
-const helper = require('./helpers');
+const { catchRejection } = require('./helpers');
 const Integration = require('./models/integration');
 const Organization = require('./models/organization');
-
-const catchRejection = helper.catchRejection;
 
 module.exports = {
   requireAuthentication: (req, res, next) => {

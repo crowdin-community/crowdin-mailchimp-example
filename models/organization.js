@@ -2,15 +2,10 @@ const axios = require('axios');
 const Sequelize = require('sequelize');
 const crowdin = require('@crowdin/crowdin-api-client').default;
 
-const helper = require('../helpers');
+const keys = require('../keys');
 const db = require('../db_connect');
-const keys = require('./../keys');
 const Mapping = require('./mapping');
-
-const nodeTypes = helper.nodeTypes;
-const encryptData = helper.encryptData;
-const decryptData = helper.decryptData;
-const catchRejection = helper.catchRejection;
+const { nodeTypes, encryptData, decryptData, catchRejection } = require('../helpers');
 
 // Structure of organization table
 const Organization = db.define('organization', {
