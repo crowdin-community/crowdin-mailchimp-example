@@ -2,7 +2,7 @@ const Mailchimp = require('mailchimp-api-v3');
 const Sequelize = require('sequelize');
 
 const db = require('../db_connect');
-const { catchRejection, decryptData, nodeTypes } = require('helpers');
+const { catchRejection, decryptData, nodeTypes } = require('../helpers');
 
 // Database structure Integration table
 const Integration = db.define('Integration', {
