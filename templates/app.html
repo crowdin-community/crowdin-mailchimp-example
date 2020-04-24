@@ -63,7 +63,7 @@
             icon-after="arrow_forward"
             onclick="integrationLogin()"
         >
-          Log In To Integration
+          Log In With Integration
         </crowdin-button>
       </crowdin-card>
       <!--<crowdin-a href="#" target="_blank">Learn more</crowdin-a>-->
@@ -80,7 +80,6 @@
 </div>
 <crowdin-toasts></crowdin-toasts>
 <script type=text/javascript>
-
   if (!window.Promise) {
     window.Promise = Promise;
   }
@@ -245,7 +244,6 @@
           el.innerHTML = '';
           el.appendChild(template.content.cloneNode(true));
           prepareComponent();
-          getProjectData();
         }
       }).catch(e => {
       catchRejection(e, 'Can\'t check instalation status');
@@ -294,6 +292,7 @@
         return checkResponse(response);
       })
       .then((res) => {
+        getProjectData();
         el.setIntegrationFilesData(res);
         el.setAttribute('is-integration-loading', false);
       })
@@ -314,10 +313,8 @@
         return checkResponse(response);
       })
       .then((res) => {
-        setTimeout(() => {
-          el.setCrowdinFilesData(res);
-          el.setAttribute('is-crowdin-loading', false);
-        }, 500);
+        el.setCrowdinFilesData(res);
+        el.setAttribute('is-crowdin-loading', false);
       })
       .catch(e => {
         el.setAttribute('is-crowdin-loading', false);

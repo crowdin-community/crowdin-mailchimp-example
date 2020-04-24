@@ -17,7 +17,7 @@ const manifest = {
   "modules": {
       "integrations": [
           {
-              "key": "mailchimp_app_test",
+              "key": "mailchimp",
               "name": "Mailchimp",
               "description": "Upload and localize your marketing content from Mailchimp",
               "logo": "/assets/logo.svg",

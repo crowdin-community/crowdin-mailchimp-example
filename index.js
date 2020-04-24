@@ -33,9 +33,9 @@ app.use(cookieSession({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use(express.static('polyfills'));
+app.use("/polyfills", express.static(__dirname + '/polyfills'));
 
-app.get('/assets/logo.svg', (req, res) => res.sendFile(__dirname + '/assets/logo.svg'));
+app.use("/assets", express.static(__dirname + '/assets'));
 
 app.get('/', middleware.requireAuthentication, (req, res) => res.sendFile(__dirname + '/templates/app.html'));
 
