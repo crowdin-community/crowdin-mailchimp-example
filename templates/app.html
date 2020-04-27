@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title></title>
-  <script src="https://pure-refuge-59195.herokuapp.com/dist/crowdin-web-components/crowdin-web-components.js"></script>
+  <script src="https://crowdin-web-components.s3.amazonaws.com/crowdin-web-components.js"></script>
   <script src="/polyfills/promise.js"></script>
   <script src="/polyfills/fetch.js"></script>
   <style type='text/css'>
@@ -280,6 +280,16 @@
     getCrowdinFiles();
   }
 
+  function setComponentData(res, key, attr) {
+    let el = document.querySelector('crowdin-simple-integration');
+    if(el[key]) {
+      el[key](res);
+      el.setAttribute(attr, false);
+    } else {
+      setTimeout(() => {setComponentData(res, key, attr)}, 100);
+    }
+  }
+
   function getIntegrationFiles() {
     let el = document.querySelector('crowdin-simple-integration');
     el.setAttribute('is-integration-loading', true);
@@ -291,9 +301,7 @@
         return checkResponse(response);
       })
       .then((res) => {
-        getProjectData();
-        el.setIntegrationFilesData(res);
-        el.setAttribute('is-integration-loading', false);
+        setComponentData(res, 'setIntegrationFilesData', 'is-integration-loading');
       })
       .catch(e => {
         el.setAttribute('is-integration-loading', false);
@@ -312,8 +320,8 @@
         return checkResponse(response);
       })
       .then((res) => {
-        el.setCrowdinFilesData(res);
-        el.setAttribute('is-crowdin-loading', false);
+        getProjectData();
+        setComponentData(res, 'setCrowdinFilesData', 'is-crowdin-loading');
       })
       .catch(e => {
         el.setAttribute('is-crowdin-loading', false);
@@ -330,10 +338,7 @@
         return checkResponse(response);
       })
       .then((res) => {
-        setTimeout(() => {
-          let el = document.querySelector('crowdin-simple-integration');
-          el.setCrowdinLanguagesData(res.projectTargetLanguages);
-        }, 2000);
+        setComponentData(res.projectTargetLanguages, 'setCrowdinLanguagesData', 'is-crowdin-loading');
       })
       .catch(e => {
         catchRejection(e, 'Can\'t fetch project data');
