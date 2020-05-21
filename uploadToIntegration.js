@@ -1,5 +1,6 @@
 const axios = require('axios').default;
 
+const { emitEvent } = require('./sockets');
 const { catchRejection } = require('./helpers');
 
 function integrationUpdate() {
@@ -20,9 +21,17 @@ function integrationUpdate() {
       })
       .then(responses => {
         // all goes well send response back
-        res.status(200).json(responses);
+        if(!res.headersSent) {
+          return res.status(200).json(responses.map(r => r.data));
+        }
+
+        emitEvent({
+          error: false,
+          refreshIntegration: true,
+          message: 'Async files upload to MailChimp finished',
+        }, res);
       })
-      .catch(catchRejection('Cant upload files to integration', res));
+      .catch(catchRejection('Cant upload files to integration', res, req));
   }
 }
 
@@ -30,16 +39,15 @@ module.exports = integrationUpdate;
 
 const prepareData = (filesTranslations, translations, res) => {
   return new Promise ((resolve, reject) => {
-    const integrationApiClient = res.integrationClient;
     const crowdinApi = res.crowdinApiClient;
     const projectId = res.origin.context.project_id;
     let filesById = {};
     let integrationFilesById = {};
     let integrationFilesList = [];
     // get all campaigns list and store it on integrationFilesList
-    integrationApiClient.get({path: `/campaigns`, query: {count: 1000, offset: 0}})
+    res.ai.get(`/campaigns?count=1000&offset=0`)
       .then(list => {
-        integrationFilesList = list.campaigns;
+        integrationFilesList = list.data.campaigns;
         // get all selected source files from Crowdin
         return Promise.all(Object.keys(filesTranslations).map( fId => crowdinApi.sourceFilesApi.getFile(projectId, fId)))
       })
@@ -47,11 +55,11 @@ const prepareData = (filesTranslations, translations, res) => {
         // Store selected files responses on filesById
         filesById = responses.reduce((acc, fileData) => ({...acc, [`${fileData.data.id}`]: fileData.data}), {});
         // Get all selected files source campaigns
-        return Promise.all(Object.values(filesById).map(f => integrationApiClient.get({path: `campaigns/${f.name.replace('.html','')}`})))
+        return Promise.all(Object.values(filesById).map(f => res.ai.get(`campaigns/${f.name.replace('.html','')}`)))
       })
       .then(integrationFiles => {
         // Store campaigns date on object by id
-        integrationFilesById = integrationFiles.reduce((acc, fileData) => ({...acc, [`${fileData.id}`]: fileData}), {});
+        integrationFilesById = integrationFiles.reduce((acc, fileData) => ({...acc, [`${fileData.data.id}`]: fileData.data}), {});
         // For each selected translation build translation on Crowdin by file id and language
         return Promise.all(translations.map(t =>
           crowdinApi.translationsApi.buildProjectFileTranslation(projectId, t.fileId, {targetLanguageId: t.languageId, exportAsXliff: false})
@@ -74,11 +82,14 @@ const updateIntegrationFile = (params) => {
     const {filesById, integrationFilesById, integrationFilesList, translatedFilesData, t, index, res} = params;
     const fileName = `${filesById[t.fileId].title}/${t.languageId}`; // prepare file translation name
     const integrationTranslationFile = integrationFilesList.find(f => f.settings.title === fileName); // Try find translation on
-    const integrationApiClient = res.integrationClient;
 
     if(integrationTranslationFile){
       // We find translation for this file and this language, update it
-      return integrationApiClient.put('/campaigns/' + integrationTranslationFile.id + '/content', {html: translatedFilesData[index]})
+      return res.ai({
+        method: 'PUT',
+        url: '/campaigns/' + integrationTranslationFile.id + '/content',
+        data: {html: translatedFilesData[index]}
+      })
     } else {
       // We don't find translation for this file and language
       // Get origin file from integration
@@ -91,10 +102,18 @@ const updateIntegrationFile = (params) => {
         tracking: originFile.tracking
       };
       // Create new campaign
-      return integrationApiClient.post('/campaigns', payload)
-        .then(res => {
+      return res.ai({
+        method: 'POST',
+        url: '/campaigns/',
+        data: {...payload}
+      })
+        .then(result => {
           // set current translations as campaign content
-          return integrationApiClient.put('/campaigns/' + res.id + '/content', {html: translatedFilesData[index]})
+          return res.ai({
+            method: 'PUT',
+            url: '/campaigns/' + result.data.id + '/content',
+            body: {html: translatedFilesData[index]}
+          })
         })
     }
 };

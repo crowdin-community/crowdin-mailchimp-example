@@ -1,8 +1,11 @@
+const axios = require('axios');
+const { PatchOperation } = require('@crowdin/crowdin-api-client');
+
 const Mapping = require('./models/mapping');
+const { emitEvent } = require('./sockets');
 
 function crowdinUpdate() {
   return (req, res) => {
-    const mailChimpApi = res.integrationClient;
     const crowdinApi = res.crowdinApiClient;
     const fileIds = req.body;
     const projectId = res.origin.context.project_id;
@@ -10,13 +13,13 @@ function crowdinUpdate() {
     let integrationFiles = [];
 
     // Get content for all selected integration files
-    Promise.all(fileIds.map(fid => mailChimpApi.get({path: `/${fid.parent_id}/${fid.id}/content`})))
+    Promise.all(fileIds.map(fid => res.ai.get(`/${fid.parent_id}/${fid.id}/content`)))
       .then((values) => {
         // Prepare responses for better use in next function
         integrationFiles = values.map(
           (f, index) => ({
-            ...f,
-            content: f.archive_html || f.html,
+            ...f.data,
+            content: f.data.archive_html || f.data.html,
             title: fileIds[index].name || (fileIds[index].settings || {}).name || fileIds[index].id,
             name: fileIds[index].id,
           })
@@ -45,6 +48,16 @@ function crowdinUpdate() {
               if(!!file) {
                 // Find file try get it
                 return crowdinApi.sourceFilesApi.getFile(projectId, file.crowdinFileId)
+                  .then(() => {
+                    return axios({
+                      method: 'patch',
+                      url: `${crowdinApi.uploadStorageApi.url}/projects/${projectId}/files/${file.crowdinFileId}`,
+                      data: [{value: `${f.title}`, op:PatchOperation.REPLACE , path: '/title'}],
+                      headers: {
+                        Authorization: `Bearer ${res.crowdinToken}`,
+                      }
+                    });
+                  })
                   .then(() => {
                     // Try update file on crowdin
                     return crowdinApi.sourceFilesApi.updateOrRestoreFile(projectId, file.crowdinFileId, {storageId: f.id})
@@ -93,7 +106,15 @@ function crowdinUpdate() {
       })
       .then(responses => {
         // all goes good rend response back
-        res.json(responses);
+        if(!res.headersSent) {
+          return res.json(responses);
+        }
+
+        emitEvent({
+          error: false,
+          refreshCrowdin: true,
+          message: 'Async files upload to Crowdin finished',
+        }, res);
       })
       .catch(e => {
         // something goes wrong, send exact error back

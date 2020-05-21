@@ -1,4 +1,4 @@
-const Mailchimp = require('mailchimp-api-v3');
+const axios = require('axios');
 const Sequelize = require('sequelize');
 
 const db = require('../db_connect');
@@ -22,6 +22,8 @@ const Integration = db.define('Integration', {
   },
 });
 
+const instanceRequest = {};
+
 Integration.getApiClient = function (req, res) {
   return Integration.findOne({where: {uid: req.user.uid}})
     .then((integration) => {
@@ -29,9 +31,38 @@ Integration.getApiClient = function (req, res) {
         // if we don't find Integration, we can't create Integration API client. Exit
         return res.status(404).send();
       }
+      const token = decryptData(integration.integrationToken);
+      const instance = axios.create({
+        baseURL: `https://${token.split('-').pop()}.api.mailchimp.com/3.0/`,
+        headers: {'Authorization': `Basic ${token}`}
+      });
 
-      // initialize Integration API client and connect it to response object
-      res.integrationClient = new Mailchimp(decryptData(integration.integrationToken));
+      instanceRequest[integration.uid] = {
+        'second-limit': 10,
+        parallelRequests: 0,
+        timeOutId: null,
+        ...instanceRequest[integration.uid] || {}
+      };
+
+      const checkTimeout = config => {
+        return new Promise((resolve, reject) => {
+          if(instanceRequest[integration.uid].parallelRequests >= instanceRequest[integration.uid]['second-limit'] - 3){
+            return setTimeout(() =>  resolve(checkTimeout(config)), 1000);
+          }
+          instanceRequest[integration.uid].parallelRequests += 1;
+          instanceRequest[integration.uid].timeOutId && clearTimeout(instanceRequest[integration.uid].timeOutId);
+          instanceRequest[integration.uid].timeOutId = setTimeout(() => { instanceRequest[integration.uid].parallelRequests = 0; }, 1000);
+          resolve(config);
+        });
+      };
+
+      instance.interceptors.request.use(function (config) {
+        return checkTimeout(config);
+      }, function (error) {
+        return Promise.reject(error);
+      });
+
+      res.ai = instance;
 
       return new Promise (resolve => resolve());
     })
@@ -39,7 +70,6 @@ Integration.getApiClient = function (req, res) {
 
 // Get date from integration
 Integration.getData = () => (req, res) => {
-  const mailChimpApi = res.integrationClient; // Destruct integration client from response
   let files = [];
 
   // Define root elements for integration
@@ -57,12 +87,12 @@ Integration.getData = () => (req, res) => {
 
   // Get records for each root element
   Promise.all(Object.keys(roots).map(t =>
-    mailChimpApi.get({path: `/${t}`, query: {count: 1000, offset: 0}})
+    res.ai.get(`/${t}?count=1000&offset=0`)
   ))
     .then(responses => { // get responses for each root element
       responses.forEach((r, index) => { // Get records from each response
         files.push( // Push records as files to main files array
-          ...r[roots[Object.keys(roots)[index]]].map(f => ({  // Extract exact records array from full response object
+          ...r.data[roots[Object.keys(roots)[index]]].map(f => ({  // Extract exact records array from full response object
           ...f,
           node_type: nodeTypes.FILE,
           type: 'html', // we upload source file as HTML in this integration, type used for file icon on UI
@@ -72,7 +102,7 @@ Integration.getData = () => (req, res) => {
       });
       res.send(files);
     })
-    .catch(catchRejection('Cant fetch integration data', res));
+    .catch(catchRejection('Cant fetch integration data', res, req));
 };
 
 module.exports = Integration;
