@@ -46,7 +46,7 @@ Organization.getProjectData = () => (req, res) => {
       // Connect projectTargetLanguages to project response and send
       res.json({...project.data, projectTargetLanguages})
     })
-    .catch(catchRejection('Cant fetch project data', res));
+    .catch(catchRejection('Cant fetch project data', res, req));
 };
 
 Organization.getFileProgress = () => (req, res) => {
@@ -58,7 +58,7 @@ Organization.getFileProgress = () => (req, res) => {
         [`${req.body.fileId}`]: progress.data.map(({data}) => ({...data}))
       })
     )
-    .catch(catchRejection('Cant fetch progress for file', res));
+    .catch(catchRejection('Cant fetch progress for file', res, req));
 };
 
 Organization.getProjectFiles = () => (req, res) => {
@@ -90,7 +90,7 @@ Organization.getProjectFiles = () => (req, res) => {
         }));
       res.json(files);
     })
-    .catch(catchRejection('Cant fetch data from Crowdin', res))
+    .catch(catchRejection('Cant fetch data from Crowdin', res, req))
 // --------------------- End get files with mapping -------------------------------
 // --------------------  Start get all files without mapping from Crowdin ---------
     // Promise.all([
@@ -145,10 +145,10 @@ Organization.install = () => (req, res) => {
       if(!!organization){ // If we successfully update or create organization record
         res.status(204).send();
       } else {
-        catchRejection('Cant install application', res)();
+        catchRejection('Cant install application', res, req)();
       }
     })
-    .catch(catchRejection('Cant install application', res));
+    .catch(catchRejection('Cant install application', res, req));
 };
 
 Organization.getOrganization = (res) => {
@@ -163,6 +163,7 @@ Organization.getOrganization = (res) => {
         const isExpired = +organization.expire < +new Date().getTime() / 1000;
         if(!isExpired) {
           // If token is valid we init crowdin api client with credentials and connect to response. Exit
+          res.crowdinToken = decryptData(organization.accessToken);
           res.crowdinApiClient = new crowdin({
             token: decryptData(organization.accessToken),
             organization: organization.uid,
@@ -189,6 +190,7 @@ Organization.getOrganization = (res) => {
             })
             .then(organization => {
               // Init Crowdin API client, connect to response and exit
+              res.crowdinToken = decryptData(organization.accessToken);
               res.crowdinApiClient = new crowdin({
                 token: decryptData(organization.accessToken),
                 organization: organization.uid,

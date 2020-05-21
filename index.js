@@ -8,6 +8,7 @@ const keys = require('./keys');
 const db = require('./db_connect');
 const config = require('./config');
 const PORT = process.env.PORT || 7000;
+const { io } = require('./sockets.js');
 const middleware = require('./middleware.js');
 const passportSetup = require('./passportSetup');
 const crowdinUpdate = require('./uploadToCrowdin');
@@ -96,7 +97,8 @@ if(process.env.NODE_ENV !== 'production') {
 // ------------------------------ end routes for debugging only ---------------------------
 
 db.sync({force: false}).then(function() {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Crowdin apps listening on ${PORT}! Good luck!!!`);
   });
+  io.attach(server);
 });

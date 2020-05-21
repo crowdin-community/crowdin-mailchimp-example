@@ -36,6 +36,11 @@ module.exports = {
         req.session.crowdin = JSON.stringify({origin, clientId, tokenJwt});
         res.origin = decoded;
         res.clientId = `${res.origin.domain}__${res.origin.context.project_id}`;
+        setTimeout(() => {
+          if(!res.headersSent) {
+            res.status(503).json({ error: 'Response took too much time. \nIt will continue running on background'})
+          }
+        }, 25000);
         return next();
       }
     });
@@ -45,13 +50,13 @@ module.exports = {
     // Get integration credentials create Integration API client and connect to response
     Integration.getApiClient(req, res)
       .then(() => next())
-      .catch(catchRejection('Can\'t find integration by id', res))
+      .catch(catchRejection('Can\'t find integration by id', res, req))
   },
 
   withCrowdin: (req, res, next) => {
     // Get organization credentials create Crowdin API client and connect to response
     Organization.getOrganization(res)
       .then(() => next())
-      .catch(catchRejection('Can\'t find organization by id', res));
+      .catch(catchRejection('Can\'t find organization by id', res, req));
   },
 };
