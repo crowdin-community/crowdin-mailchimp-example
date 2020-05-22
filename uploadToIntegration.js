@@ -55,11 +55,11 @@ const prepareData = (filesTranslations, translations, res) => {
         // Store selected files responses on filesById
         filesById = responses.reduce((acc, fileData) => ({...acc, [`${fileData.data.id}`]: fileData.data}), {});
         // Get all selected files source campaigns
-        return Promise.all(Object.values(filesById).map(f => res.ai.get(`campaigns/${f.name.replace('.html','')}`)))
+        return Promise.all(Object.values(filesById).map(f => res.ai.get(`campaigns/${f.name.replace('.html','')}`).catch(e => ({}))))
       })
       .then(integrationFiles => {
         // Store campaigns date on object by id
-        integrationFilesById = integrationFiles.reduce((acc, fileData) => ({...acc, [`${fileData.data.id}`]: fileData.data}), {});
+        integrationFilesById = integrationFiles.filter(f => !!f.data).reduce((acc, fileData) => ({...acc, [`${fileData.data.id}`]: fileData.data}), {});
         // For each selected translation build translation on Crowdin by file id and language
         return Promise.all(translations.map(t =>
           crowdinApi.translationsApi.buildProjectFileTranslation(projectId, t.fileId, {targetLanguageId: t.languageId, exportAsXliff: false})
@@ -81,6 +81,9 @@ const prepareData = (filesTranslations, translations, res) => {
 const updateIntegrationFile = (params) => {
     const {filesById, integrationFilesById, integrationFilesList, translatedFilesData, t, index, res} = params;
     const fileName = `${filesById[t.fileId].title}/${t.languageId}`; // prepare file translation name
+    if(!integrationFilesById[filesById[t.fileId].name.replace('.html','')]){
+      return {data: null};
+    }
     const integrationTranslationFile = integrationFilesList.find(f => f.settings.title === fileName); // Try find translation on
 
     if(integrationTranslationFile){
@@ -112,7 +115,7 @@ const updateIntegrationFile = (params) => {
           return res.ai({
             method: 'PUT',
             url: '/campaigns/' + result.data.id + '/content',
-            body: {html: translatedFilesData[index]}
+            data: {html: translatedFilesData[index]}
           })
         })
     }

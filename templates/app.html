@@ -428,7 +428,8 @@
       document.querySelector('crowdin-toasts').pushToasts(['Select files that will be downloaded to Crowdin']);
       return;
     }
-    const fileIds = event.detail; //.map(file => file.id);
+    const fileIds = event.detail.map(({id, name, settings, create_time, parent_id, node_type}) =>
+      ({id, name, settings, create_time, parent_id, node_type}));
     let el = document.querySelector('crowdin-simple-integration');
     el.setAttribute('is-to-crowdin-process', true);
     checkOrigin()

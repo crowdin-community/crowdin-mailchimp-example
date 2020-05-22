@@ -3,20 +3,21 @@ const { PatchOperation } = require('@crowdin/crowdin-api-client');
 
 const Mapping = require('./models/mapping');
 const { emitEvent } = require('./sockets');
+const { nodeTypes } = require('./helpers');
 
 function crowdinUpdate() {
   return (req, res) => {
     const crowdinApi = res.crowdinApiClient;
-    const fileIds = req.body;
+    const fileIds = req.body.filter(f => f.node_type === nodeTypes.FILE);
     const projectId = res.origin.context.project_id;
 
     let integrationFiles = [];
 
     // Get content for all selected integration files
-    Promise.all(fileIds.map(fid => res.ai.get(`/${fid.parent_id}/${fid.id}/content`)))
+    Promise.all(fileIds.map(fid => res.ai.get(`/${fid.parent_id}/${fid.id}/content`).catch(e => ({}))))
       .then((values) => {
         // Prepare responses for better use in next function
-        integrationFiles = values.map(
+        integrationFiles = values.filter(f => f.data).map(
           (f, index) => ({
             ...f.data,
             content: f.data.archive_html || f.data.html,
