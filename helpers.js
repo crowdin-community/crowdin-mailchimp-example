@@ -4,6 +4,8 @@ const { emitEvent } = require('./sockets');
 
 const catchRejection = (message, res, req) => e => {
   let errorText = message;
+  // here right place to log some errors
+  // console.log(e);
   if(e){
     if(typeof e === 'string'){
       errorText = e;
@@ -15,7 +17,7 @@ const catchRejection = (message, res, req) => e => {
       errorText = JSON.stringify(e.error);
     }
 
-    if(e.response.status === 403){
+    if((e.response || {}).status === 403){
       req.logout();
       emitEvent({
         error: false,
