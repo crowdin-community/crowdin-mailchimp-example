@@ -69,7 +69,7 @@ Organization.getProjectFiles = () => (req, res) => {
     .then(uploadedFiles => {
       if(!uploadedFiles || !uploadedFiles.length){
         // We haven't uploaded files yet, it's ok return empty array
-        res.json([]);
+        return new Promise(resolve => resolve([]));
       }
       // Get each uploaded file with Crowdin API
       return Promise.all(uploadedFiles.map(f =>
