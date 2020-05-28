@@ -44,7 +44,13 @@ function crowdinUpdate() {
         // for each added file do next
         return Promise.all(addedFiles.map(f => {
           // Try find file on mapping table
-          return Mapping.findOne({where: {projectId: projectId, integrationFileId: f.integrationFileId}})
+          return Mapping.findOne({
+            where: {
+              projectId: projectId, 
+              domain: res.origin.domain,
+              integrationFileId: f.integrationFileId
+            }
+          })
             .then(file => {
               if(!!file) {
                 // Find file try get it
