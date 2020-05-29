@@ -95,7 +95,7 @@
     window.Promise = Promise;
   }
 
-  let manifest = {};
+  let manifest = { name: 'Mailchimp' };
   let urlParams = new URLSearchParams(window.location.search);
   let origin = urlParams.get('origin');
   let client_id = urlParams.get('client_id');
@@ -474,7 +474,7 @@
         return checkResponse(response);
       })
       .then(res => {
-        showToast(Object.keys(fileIds).length === 1 ? 'File imported successfully' : 'Files imported successfully');
+        showToast(Object.keys(fileIds).length === 1 ? 'File exported successfully' : 'Files exported successfully');
         el.setAttribute('is-to-integration-process', false);
         getIntegrationFiles();
       })
