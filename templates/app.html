@@ -132,14 +132,6 @@
     // here the right place to console.log what goes wrong
     // console.log('err -------------->', e);
     showToast(e.error || message);
-    let el = document.querySelector('.i_w .center');
-    if(!!el) {
-      el.innerHTML =
-        `<crowdin-nothing-to-display
-                message="${manifest.name}"
-                sub-message="It's not a problem with crowdin, it's something on app backend"
-            ></crowdin-nothing-to-display>`;
-    }
   }
 
   function checkResponse(response) {
