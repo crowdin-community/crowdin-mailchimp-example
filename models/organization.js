@@ -114,7 +114,7 @@ Organization.getProjectFiles = () => (req, res) => {
 Organization.install = () => (req, res) => {
   let client = null;
   // Try find record with organization if it was installed some time before
-  Organization.findOne({where: {uid: req.body.domain}})
+  Organization.findOne({where: {uid: `${req.body.domain || req.body.organizationId}`}})
     .then(organization => {
       client = organization;
       let payload = {
@@ -129,7 +129,7 @@ Organization.install = () => (req, res) => {
     })
     .then(resp => {
       const params = {
-        uid: req.body.domain,
+        uid: `${req.body.domain || req.body.organizationId}`,
         accessToken: encryptData(resp.data.access_token),
         refreshToken: encryptData(resp.data.refresh_token),
         expire: new Date().getTime()/1000 + +resp.data.expires_in
@@ -166,7 +166,7 @@ Organization.getOrganization = (res) => {
           res.crowdinToken = decryptData(organization.accessToken);
           res.crowdinApiClient = new crowdin({
             token: decryptData(organization.accessToken),
-            organization: organization.uid,
+            ...((res.origin || {}).isCrowdin) ? {} : { organization: organization.uid }
           });
           resolve();
         } else {
@@ -193,7 +193,7 @@ Organization.getOrganization = (res) => {
               res.crowdinToken = decryptData(organization.accessToken);
               res.crowdinApiClient = new crowdin({
                 token: decryptData(organization.accessToken),
-                organization: organization.uid,
+                ...((res.origin || {}).isCrowdin) ? {} : { organization: organization.uid }
               });
               resolve();
             })
