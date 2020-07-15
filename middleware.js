@@ -35,6 +35,10 @@ module.exports = {
       } else {
         req.session.crowdin = JSON.stringify({origin, clientId, tokenJwt});
         res.origin = decoded;
+        if(!res.origin.domain){
+          res.origin.domain = `${res.origin.context.organization_id}`;
+          res.origin.isCrowdin = true;
+        }
         res.clientId = `${res.origin.domain}__${res.origin.context.project_id}`;
         setTimeout(() => {
           if(!res.headersSent) {
