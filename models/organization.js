@@ -166,6 +166,7 @@ Organization.getOrganization = (res) => {
           res.crowdinToken = decryptData(organization.accessToken);
           res.crowdinApiClient = new crowdin({
             token: decryptData(organization.accessToken),
+            ...keys.crowdinApiClientBaseUrl || {},
             ...((res.origin || {}).isCrowdin) ? {} : { organization: organization.uid }
           });
           resolve();
@@ -193,6 +194,7 @@ Organization.getOrganization = (res) => {
               res.crowdinToken = decryptData(organization.accessToken);
               res.crowdinApiClient = new crowdin({
                 token: decryptData(organization.accessToken),
+                ...keys.crowdinApiClientBaseUrl || {},
                 ...((res.origin || {}).isCrowdin) ? {} : { organization: organization.uid }
               });
               resolve();
