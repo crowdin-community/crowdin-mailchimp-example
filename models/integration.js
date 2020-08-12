@@ -34,7 +34,7 @@ Integration.getApiClient = function (req, res) {
       const token = decryptData(integration.integrationToken);
       const instance = axios.create({
         baseURL: `https://${token.split('-').pop()}.api.mailchimp.com/3.0/`,
-        headers: {'Authorization': `Basic ${token}`}
+        headers: {'Authorization': `OAuth ${token}`}
       });
 
       instanceRequest[integration.uid] = {

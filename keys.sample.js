@@ -5,7 +5,8 @@ const baseUrl = isDev
   : "https://<app_name>.herokuapp.com";
 
 module.exports = {
-  baseUrl: baseUrl,
+  isDev,
+  baseUrl,
   crowdinClientId: process.env.CROWDIN_CLIENT_ID || "crowdinClientId",
   crowdinClientSecret: process.env.CROWDIN_CLIENT_SECRET || "crowdinClientSecret",
   integrationClientId: process.env.INTEGRATION_CLIENT_ID || "IntegrationClientId",
