@@ -139,6 +139,12 @@ git push heroku master
 
 For more about Node.js Apps on Heroku read "[Getting Started on Heroku with Node.js](https://devcenter.heroku.com/articles/getting-started-with-nodejs)" article.
 
+#### Docker
+1. sudo docker build -t mailchimp-app .
+2. sudo docker run --restart on-failure:5 -it --log-driver local --volume /usr/data/mailchimp-app:/usr/src/app/data -d -p 7000:7000 mailchimp-app
+
+the database file /usr/data/mailchimp-app
+
 ### App Installation in Crowdin
 
 1. In the upper-right corner, click your profile photo and select *Organization Settings*.
