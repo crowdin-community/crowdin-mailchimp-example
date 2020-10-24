@@ -12,6 +12,7 @@ Using this Application you can easily localize your Mailchimp content in Crowdin
 * [Running](#running)
     * [Local Environment](#local-environment)
     * [Heroku](#heroku)
+    * [Docker](#docker)
 * [App Installation in Crowdin](#app-installation-in-crowdin)
 * [Project Structure](#project-structure)
 * [Creating an App](#creating-an-app)
@@ -141,7 +142,7 @@ For more about Node.js Apps on Heroku read "[Getting Started on Heroku with Node
 
 #### Docker
 1. sudo docker build -t mailchimp-app .
-2. sudo docker run --restart on-failure:5 -it --log-driver local --volume /usr/data/mailchimp-app:/usr/src/app/data -d -p 7000:7000 mailchimp-app
+2. sudo docker run --restart on-failure:5 -it --log-driver local --volume /usr/data/mailchimp-app:/usr/src/app/data -d -p 7050:7050 mailchimp-app
 
 the database file /usr/data/mailchimp-app
 

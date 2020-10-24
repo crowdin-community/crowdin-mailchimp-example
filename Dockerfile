@@ -15,6 +15,6 @@ COPY . .
 
 ENV NODE_ENV=development
 
-EXPOSE 7000
+EXPOSE 7050
 
 CMD [ "node", "index.js" ]
